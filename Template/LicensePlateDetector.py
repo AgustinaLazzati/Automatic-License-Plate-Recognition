@@ -4,11 +4,12 @@ Created on Mon Sep 15 17:45:11 2025
 
 @author: debora
 """
-# import the necessary packages
-#from collections import namedtuple
-# from skimage.filters import threshold_local
-# from skimage import segmentation
-# from skimage import measure
+#import the necessary packages
+from collections import namedtuple
+import skimage
+from skimage.filters import threshold_local
+from skimage import segmentation
+from skimage import measure
 from imutils import perspective
 import numpy as np
 import imutils
@@ -121,4 +122,4 @@ def detectPlates(image):
         return regions
 
 
-    
+print("Holaaaaa solucionadoooo")
