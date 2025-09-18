@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 # Paths (THIS CHANGES SINCE DATA IS IN GITIGNORE)
-input_folder = "./data/Patentes/Frontal"
+input_folder = "./data/Patentes/Lateral"
 output_folder = "./data/Patentes/LateralAugmented"
 os.makedirs(output_folder, exist_ok=True)
 

@@ -120,6 +120,3 @@ def detectPlates(image):
                 if (SHOW):
                     print("REGION BOX ACCEPTED->",box)
         return regions
-
-
-print("Holaaaaa solucionadoooo")
