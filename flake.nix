@@ -71,6 +71,7 @@ EOF
 
             pythonPackages.matplotlib
             pythonPackages.numpy
+            pythonPackages.tqdm
             pythonPackages.opencv4
             pythonPackages.ipykernel
 
