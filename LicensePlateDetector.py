@@ -121,3 +121,4 @@ def detectPlates(image):
                     print("REGION BOX ACCEPTED->",box)
         return regions
 
+if __name__ == "__main__":

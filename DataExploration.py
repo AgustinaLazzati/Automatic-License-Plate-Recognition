@@ -21,14 +21,14 @@ from imutils import perspective
 from matplotlib import pyplot as plt
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from license_plate.LicensePlateDetector import detectPlates
+from LicensePlateDetector import detectPlates
 
 
     
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
+DataDir=r'data/real_plates/'
 Views=['Frontal','Lateral']
 
 plateArea={}
@@ -81,12 +81,15 @@ plt.title('Color Distribution')
 plt.legend(Views)   
 # BoxPlots
 x=[]   
+plt.show()
 
+"""
 for k in np.arange(len(Views)):
     x.append(imageColor[Views[k]])    
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('Color Distribution')
+"""
 
 ## Brightness
 # Histograms
@@ -104,6 +107,7 @@ for k in np.arange(len(Views)):
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('Brightness Distribution')
+plt.show()
 
 # Camera ViewPoint
 co=['b','r']

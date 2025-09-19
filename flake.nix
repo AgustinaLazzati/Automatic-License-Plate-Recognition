@@ -70,6 +70,9 @@ EOF
             python 
 
             pythonPackages.matplotlib
+            pythonPackages.imutils
+            pythonPackages.scikit-image 
+            pythonPackages.scipy
             pythonPackages.numpy
             pythonPackages.tqdm
             pythonPackages.opencv4
