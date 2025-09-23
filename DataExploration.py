@@ -28,7 +28,7 @@ from LicensePlateDetector import detectPlates
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'data/real_plates/'
+DataDir=r'data'
 Views=['Frontal','Lateral']
 
 plateArea={}
@@ -55,10 +55,12 @@ for View in Views:
         imageIlluminance[View].append(np.mean(cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,2].flatten()))
         imageSaturation[View].append(np.mean(cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,1].flatten()))
         # Image ViewPoint (orientation with respect frontal view and focal distance)
-        regions=detectPlates(image)
+        regions, _ =detectPlates(image)  #OUR detectPlates RETURNS (regions, image)
         for reg in regions:
             # Region Properties
+            reg = np.array(reg, dtype=np.float32)   # ensuring type is correct
             rect = cv2.minAreaRect(reg)
+            
             plateArea[View].append(np.prod(rect[1]))
             # Due to the way cv2.minAreaRect computes the sides of the rectangle
             # (https://namkeenman.wordpress.com/2015/12/18/open-cv-determine-angle-of-rotatedrect-minarearect/)
@@ -71,6 +73,7 @@ for View in Views:
                 plateAngle[View].append(rect[2])
             
 #### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
+# -------------------------------------------------------------
 ## Color Distribution
 # Histograms
 co=['b','r']
@@ -83,14 +86,13 @@ plt.legend(Views)
 x=[]   
 plt.show()
 
-"""
 for k in np.arange(len(Views)):
     x.append(imageColor[Views[k]])    
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('Color Distribution')
-"""
 
+# -------------------------------------------------------------
 ## Brightness
 # Histograms
 co=['b','r']
@@ -99,16 +101,23 @@ for k in np.arange(len(Views)):
     plt.hist(imageIlluminance[Views[k]],bins=20,edgecolor='k',color=co[k],alpha=1-0.5*k)  
 plt.title('Brightness Distribution')
 plt.legend(Views)   
-# BoxPlots
-x=[]   
 
-for k in np.arange(len(Views)):
-    x.append(imageIlluminance[Views[k]])    
+# BoxPlots
+x = []
+for k in range(len(Views)):
+    x.append(imageIlluminance[Views[k]])
+colors = ['b', 'salmon']  # one color per view
 plt.figure()
-plt.boxplot(x,labels=Views)
+bp = plt.boxplot(x, patch_artist=True, tick_labels=Views)
+for patch, color in zip(bp['boxes'], colors):
+    patch.set_facecolor(color)
+for median, color in zip(bp['medians'], colors):
+    median.set(color='black', linewidth=2)
+
 plt.title('Brightness Distribution')
 plt.show()
 
+# -------------------------------------------------------------
 # Camera ViewPoint
 co=['b','r']
 plt.figure()  
@@ -120,7 +129,12 @@ plt.legend(Views)
 x=[]   
 
 for k in np.arange(len(Views)):
-    x.append(plateAngle[Views[k]])    
+    x.append(plateAngle[Views[k]])  
+colors = ['b', 'salmon']  # one color per view
+plt.figure()
+bp = plt.boxplot(x, patch_artist=True, tick_labels=Views)
+for patch, color in zip(bp['boxes'], colors):
+    patch.set_facecolor(color)
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('View Point Distribution')

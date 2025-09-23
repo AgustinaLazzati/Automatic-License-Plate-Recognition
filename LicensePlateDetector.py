@@ -20,7 +20,7 @@ import os
 import argparse
 import random
 
-SHOW = 1
+SHOW = 0
 minPlateW = 100
 minPlateH = 30
 
@@ -107,6 +107,7 @@ def detectPlates(image):
     return regions, image
 
 
+
 def main():
     parser = argparse.ArgumentParser(description="Detect license plates in images.")
     parser.add_argument(
@@ -114,7 +115,16 @@ def main():
     )
     args = parser.parse_args()
 
-    datapath = args.datapath
+    # CHANGE BECAUSE IT WASNT WORRKING FOR ME, I THINK THAT ITS BECAUSE THE DIFERENT \ AND / 
+    # datapath = args.datapath
+    # Updated to use relative path if no argument is given
+    if args.datapath:
+        datapath = args.datapath
+    else:
+        datapath = "./data/Frontal"  # default relative path
+
+    # Normalize the path to avoid issues with slashes/backslashes
+    datapath = os.path.abspath(datapath).replace("\\", "/")
 
     if not os.path.isdir(datapath):
         print(f"Error: Directory '{datapath}' not found.")
@@ -129,7 +139,12 @@ def main():
         return
 
     image_name = random.choice(image_files)
-    image_path = os.path.join(datapath, image_name)
+    
+    # PREVIOUS LINE------
+    # image_path = os.path.join(datapath, image_name)
+    # Updated to normalize path
+    image_path = os.path.abspath(os.path.join(datapath, image_name)).replace("\\", "/")
+    
     print(f"Processing image: {image_path}")
 
     image = cv2.imread(image_path)
@@ -156,3 +171,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
