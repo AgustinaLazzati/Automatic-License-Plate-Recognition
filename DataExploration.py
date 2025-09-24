@@ -76,7 +76,7 @@ def computeProperties (DataDir,Views):
 
 #### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
 # -------------------------------------------------------------
-def Visualplots(name, Views, plateAngle, imageColor, 
+def Visualplots(dataset_name, Views, plateAngle, imageColor, 
           imageIlluminance, imageSaturation, SHOW_SEPARATE=False):
 
     co=['b','c']  # colors for views
@@ -87,12 +87,12 @@ def Visualplots(name, Views, plateAngle, imageColor,
         for k, view in enumerate(Views):
             plt.figure()
             plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-            plt.title(f'{name} Color Distribution - {view}')
+            plt.title(f'{dataset_name} Color Distribution - {view}')
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{name} Color Distribution (Combined)')
+        plt.title(f'{dataset_name} Color Distribution (Combined)')
         plt.legend(Views)
 
     # Boxplot
@@ -103,7 +103,7 @@ def Visualplots(name, Views, plateAngle, imageColor,
         patch.set_facecolor(color)
     for median in bpC['medians']:
         median.set(color='black', linewidth=2)
-    plt.title(f'{name} Color Distribution')
+    plt.title(f'{dataset_name} Color Distribution')
     
 
     # -------------------------------------------------------------
@@ -117,7 +117,7 @@ def Visualplots(name, Views, plateAngle, imageColor,
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageSaturation[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{name} Saturation Distribution (Combined)')
+        plt.title(f'{dataset_name} Saturation Distribution (Combined)')
         plt.legend(Views)
 
     # Boxplot
@@ -128,7 +128,7 @@ def Visualplots(name, Views, plateAngle, imageColor,
         patch.set_facecolor(color)
     for median in bpS['medians']:
         median.set(color='black', linewidth=2)
-    plt.title(f'{name} Saturation Distribution')
+    plt.title(f'{dataset_name} Saturation Distribution')
 
 
     # -------------------------------------------------------------
@@ -137,12 +137,12 @@ def Visualplots(name, Views, plateAngle, imageColor,
         for k, view in enumerate(Views):
             plt.figure()
             plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-            plt.title(f'{name} Brightness Distribution - {view}')
+            plt.title(f'{dataset_name} Brightness Distribution - {view}')
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{name} Brightness Distribution (Combined)')
+        plt.title(f'{dataset_name} Brightness Distribution (Combined)')
         plt.legend(Views)
 
     # Boxplot
@@ -153,7 +153,7 @@ def Visualplots(name, Views, plateAngle, imageColor,
         patch.set_facecolor(color)
     for median in bpB['medians']:
         median.set(color='black', linewidth=2)
-    plt.title(f'{name} Brightness Distribution')
+    plt.title(f'{dataset_name} Brightness Distribution')
 
     # -------------------------------------------------------------
     ## Camera ViewPoint
@@ -161,12 +161,12 @@ def Visualplots(name, Views, plateAngle, imageColor,
         for k, view in enumerate(Views):
             plt.figure()
             plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-            plt.title(f'{name} View Point Distribution - {view}')
+            plt.title(f'{dataset_name} View Point Distribution - {view}')
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{name} View Point Distribution (Combined)')
+        plt.title(f'{dataset_name} View Point Distribution (Combined)')
         plt.legend(Views)
 
     # Boxplot
@@ -177,35 +177,153 @@ def Visualplots(name, Views, plateAngle, imageColor,
         patch.set_facecolor(color)
     for median in bpV['medians']:
         median.set(color='black', linewidth=2)
-    plt.title(f'{name} View Point Distribution')
+    plt.title(f'{dataset_name} View Point Distribution')
 
     plt.show()  # final display of all plots
+
+
+# With this functions, we are going to translate the Hue values to be interpretable for humans 
+# We will detect the colors in the images 
+def hsv_to_color(h, s, v):
+    #Convert HSV values (OpenCV ranges) to a rough car color name
+    # Handle grayscale first (low saturation)
+    if s < 30:  
+        if v < 50:
+            return "Black"
+        elif v > 200:
+            return "White"
+        else:
+            return "Gray"
+
+    # Otherwise, classify by hue  (BECAUSE IF NOT, THE WHITE OR BLACK WILL BE CLASSIFY AS YELLOW OR GREEN)
+    # We convert hue (0-179 OpenCV) to rough color name
+    if h < 10 or h >= 160:
+        return "Red"
+    elif h < 25:
+        return "Orange"
+    elif h < 34:
+        return "Yellow"
+    elif h < 85:
+        return "Green"
+    elif h < 125:
+        return "Blue"
+    elif h < 145:
+        return "Purple"
+    elif h < 160:
+        return "Pink"
+    else:
+        return "Unknown"
+
+
+def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, dataset_name, plot=True):
+    """Summarize car colors per dataset using existing dictionaries, with bar chart."""
+    colors = []
+    
+    # Iterate through all images in all views
+    for v in Views:
+        for i in range(len(imageColor[v])):
+            h = imageColor[v][i]          # mean Hue
+            s = imageSaturation[v][i]     # mean Saturation
+            vval = imageIlluminance[v][i] # mean Value (brightness)
+            colors.append(hsv_to_color(h, s, vval))
+    
+    # Count occurrences
+    unique, counts = np.unique(colors, return_counts=True)
+    color_counts = dict(zip(unique, counts))
+    
+    # Print summary
+    print(f"\n{dataset_name} - Color Summary")
+    for u, c in color_counts.items():
+        print(f"  {u}: {c} images")
+    
+    expected = {"Red","Orange","Yellow","Green","Blue","Purple","Pink","Black","White","Gray"}
+    missing = expected - set(unique)
+    if missing:
+        print(f"  Missing colors: {missing}")
+    else:
+        print("  All color categories present.")
+    
+    # Bar chart
+    if plot:
+        ordered_colors = ["Red","Orange","Yellow","Green","Blue","Purple","Pink","Black","White","Gray"]
+        values = [color_counts.get(c, 0) for c in ordered_colors]
+        
+        plt.figure()
+        color_map = {
+            "Red": "red", "Orange": "orange", "Yellow": "yellow", "Green": "green",
+            "Blue": "blue", "Purple": "purple", "Pink": "pink",
+            "Black": "black", "White": "lightgray", "Gray": "gray"
+        }
+        bar_colors = [color_map[c] for c in ordered_colors]
+        
+        plt.bar(ordered_colors, values, color=bar_colors, edgecolor="k")
+        plt.title(f"{dataset_name} - Car Colors")
+        plt.ylabel("Number of Images")
+        plt.xlabel("Color")
+        plt.xticks(rotation=45)
+        plt.show()
+    
+    return color_counts
+
+# Viewponts distribution
+def compare_plate_angles(datasets, views, dataset_names):
+    #Compare the plate angles between datasets for each view.
+    for view in views:
+        print(f"\n--- Comparison for view: {view} ---")
+        plt.figure()
+        for plateAngle, name in zip(datasets, dataset_names):
+            angles = plateAngle.get(view, [])
+            if len(angles) == 0:
+                continue
+            mean_angle = np.mean(angles)
+            std_angle = np.std(angles)
+            print(f"{name}: mean={mean_angle:.2f}, std={std_angle:.2f}, n={len(angles)}")
+            plt.hist(angles, bins=20, alpha=0.5, edgecolor='k', label=name)
+        
+        plt.title(f"Plate Angle Distribution - {view}")
+        plt.xlabel("Angle (degrees)")
+        plt.ylabel("Frequency")
+        plt.legend()
+        plt.show()
 
 
 
 def main():
     # WE WILL COMPARE THREE DATASETS: real_plates, our own plates, and
     # an augmented version of our plates (modiffied properties).  
-    
     SHOW_SEPARATE = False
+    PLOT = False
+
     # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
     Real_DataDir=r'data'
     Views=['Frontal','Lateral']
-    Name = 'Real Data'
     R_plateArea, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation = computeProperties(Real_DataDir, Views)
-    Visualplots(Name, R_plateArea, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation)
+    if PLOT:
+       Visualplots('Real Data', R_plateArea, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation)
 
 
     Own_DataDir=r'data/Patentes'
-    Name = 'Own Data'
     O_plateArea, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation = computeProperties(Own_DataDir, Views)
-    Visualplots(Name, O_plateArea, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation)
+    if PLOT:
+       Visualplots('Own Data', O_plateArea, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation)
     
     Augmented_DataDir=r'data/Patentes'
-    Name = 'Augmented Data'
     Views_A=['FrontalAugmented','LateralAugmented']
     A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation = computeProperties(Augmented_DataDir, Views_A)
-    Visualplots(Name, A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
+    if PLOT:
+       Visualplots('Augmented Data', A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
+
+    # Interpreting what colors have the cars of our data set...
+    #summarize_colors(R_imageColor, R_imageSaturation, R_imageIlluminance, Views, "Real Data")
+    #summarize_colors(O_imageColor, O_imageSaturation, O_imageIlluminance, Views, "Own Data")
+    #summarize_colors(A_imageColor, A_imageSaturation, A_imageIlluminance, Views_A, "Augmented Data")
+
+    # Compare frontal and lateral views across datasets
+    datasets = [R_plateAngle, O_plateAngle, A_plateAngle]
+    dataset_names = ["Real Data", "Own Data", "Augmented Data"]
+    views_to_compare = ["Frontal", "Lateral"]  # For augmented, adjust names if needed
+    compare_plate_angles(datasets, views_to_compare, dataset_names)
+
 
 
 
