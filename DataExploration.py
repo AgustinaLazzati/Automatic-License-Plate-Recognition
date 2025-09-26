@@ -24,11 +24,22 @@ from LicensePlateDetector import detectPlates
 
 """
 #### EXP-SET UP
-# DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
+# DB Main Folder (MODIFY ACCORDING TO YOUR LOCAL PATH)
 DataDir=r'data/Patentes'
 Views=['FrontalAugmented','LateralAugmented']
-
 """
+
+# Set up plots folder (overwrite)
+PLOTS_DIR = "plots"
+
+def setup_plots_folder():
+    #Ensure the plots folder exists. We use an overwrite strategy:
+    #- If files with the same names already exist they will be overwritten by plt.savefig(...)
+    # We do NOT delete the folder or its contents to avoid permission/locking issues on Windows.
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+
+
+
 #### COMPUTE PROPERTIES FOR EACH VIEW
 def computeProperties (DataDir,Views):
     plateArea={}
@@ -74,10 +85,11 @@ def computeProperties (DataDir,Views):
     return plateArea, plateAngle, imageColor, imageIlluminance, imageSaturation            
 
 
+
 #### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
-# -------------------------------------------------------------
+# We now save plots to disk instead of showing them interactively.
 def Visualplots(dataset_name, Views, plateAngle, imageColor, 
-          imageIlluminance, imageSaturation, SHOW_SEPARATE=False):
+          imageIlluminance, imageSaturation, SHOW_SEPARATE=False, save_dir=PLOTS_DIR):
 
     co=['b','c']  # colors for views
     
@@ -88,12 +100,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
             plt.figure()
             plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
             plt.title(f'{dataset_name} Color Distribution - {view}')
+            plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_{view}.png"))
+            plt.close()
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
         plt.title(f'{dataset_name} Color Distribution (Combined)')
         plt.legend(Views)
+        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_Combined.png"))
+        plt.close()
 
     # Boxplot
     plt.figure()
@@ -104,6 +120,8 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     for median in bpC['medians']:
         median.set(color='black', linewidth=2)
     plt.title(f'{dataset_name} Color Distribution')
+    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_Boxplot.png"))
+    plt.close()
     
 
     # -------------------------------------------------------------
@@ -113,12 +131,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
             plt.figure()
             plt.hist(imageSaturation[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
             plt.title(f'Saturation Distribution - {view}')
+            plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_{view}.png"))
+            plt.close()
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageSaturation[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
         plt.title(f'{dataset_name} Saturation Distribution (Combined)')
         plt.legend(Views)
+        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_Combined.png"))
+        plt.close()
 
     # Boxplot
     plt.figure()
@@ -129,6 +151,8 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     for median in bpS['medians']:
         median.set(color='black', linewidth=2)
     plt.title(f'{dataset_name} Saturation Distribution')
+    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_Boxplot.png"))
+    plt.close()
 
 
     # -------------------------------------------------------------
@@ -138,12 +162,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
             plt.figure()
             plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
             plt.title(f'{dataset_name} Brightness Distribution - {view}')
+            plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_{view}.png"))
+            plt.close()
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
         plt.title(f'{dataset_name} Brightness Distribution (Combined)')
         plt.legend(Views)
+        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_Combined.png"))
+        plt.close()
 
     # Boxplot
     plt.figure()
@@ -154,6 +182,8 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     for median in bpB['medians']:
         median.set(color='black', linewidth=2)
     plt.title(f'{dataset_name} Brightness Distribution')
+    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_Boxplot.png"))
+    plt.close()
 
     # -------------------------------------------------------------
     ## Camera ViewPoint
@@ -162,12 +192,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
             plt.figure()
             plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
             plt.title(f'{dataset_name} View Point Distribution - {view}')
+            plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_{view}.png"))
+            plt.close()
     else:
         plt.figure()
         for k, view in enumerate(Views):
             plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
         plt.title(f'{dataset_name} View Point Distribution (Combined)')
         plt.legend(Views)
+        plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_Combined.png"))
+        plt.close()
 
     # Boxplot
     plt.figure()
@@ -178,8 +212,8 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     for median in bpV['medians']:
         median.set(color='black', linewidth=2)
     plt.title(f'{dataset_name} View Point Distribution')
-
-    plt.show()  # final display of all plots
+    plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_Boxplot.png"))
+    plt.close()
 
 
 # With this functions, we are going to translate the Hue values to be interpretable for humans 
@@ -215,7 +249,7 @@ def hsv_to_color(h, s, v):
         return "Unknown"
 
 
-def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, dataset_name, plot=True):
+def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, dataset_name, plot=True, save_dir=PLOTS_DIR):
     """Summarize car colors per dataset using existing dictionaries, with bar chart."""
     colors = []
     
@@ -261,12 +295,13 @@ def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, datas
         plt.ylabel("Number of Images")
         plt.xlabel("Color")
         plt.xticks(rotation=45)
-        plt.show()
+        plt.savefig(os.path.join(save_dir, f"{dataset_name}_CarColors.png"))
+        plt.close()
     
     return color_counts
 
 # Viewponts distribution
-def compare_plate_angles(datasets, views, dataset_names):
+def compare_plate_angles(datasets, views, dataset_names, save_dir=PLOTS_DIR):
     #Compare the plate angles between datasets for each view.
     for view in views:
         print(f"\n--- Comparison for view: {view} ---")
@@ -284,7 +319,8 @@ def compare_plate_angles(datasets, views, dataset_names):
         plt.xlabel("Angle (degrees)")
         plt.ylabel("Frequency")
         plt.legend()
-        plt.show()
+        plt.savefig(os.path.join(save_dir, f"PlateAngles_{view}.png"))
+        plt.close()
 
 
 
@@ -292,31 +328,34 @@ def main():
     # WE WILL COMPARE THREE DATASETS: real_plates, our own plates, and
     # an augmented version of our plates (modiffied properties).  
     SHOW_SEPARATE = False
-    PLOT = False
+    PLOT = True
 
-    # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
+    # Ensure plots folder exists (overwrite strategy)
+    setup_plots_folder()
+
+    # DB Main Folder (MODIFY ACCORDING TO YOUR LOCAL PATH)
     Real_DataDir=r'data'
     Views=['Frontal','Lateral']
     R_plateArea, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation = computeProperties(Real_DataDir, Views)
     if PLOT:
-       Visualplots('Real Data', R_plateArea, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation)
+       Visualplots('Real Data', Views, R_plateAngle, R_imageColor, R_imageIlluminance, R_imageSaturation)
 
 
     Own_DataDir=r'data/Patentes'
     O_plateArea, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation = computeProperties(Own_DataDir, Views)
     if PLOT:
-       Visualplots('Own Data', O_plateArea, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation)
+       Visualplots('Own Data', Views, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation)
     
     Augmented_DataDir=r'data/Patentes'
     Views_A=['FrontalAugmented','LateralAugmented']
     A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation = computeProperties(Augmented_DataDir, Views_A)
     if PLOT:
-       Visualplots('Augmented Data', A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
+       Visualplots('Augmented Data', Views_A, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
 
     # Interpreting what colors have the cars of our data set...
-    #summarize_colors(R_imageColor, R_imageSaturation, R_imageIlluminance, Views, "Real Data")
-    #summarize_colors(O_imageColor, O_imageSaturation, O_imageIlluminance, Views, "Own Data")
-    #summarize_colors(A_imageColor, A_imageSaturation, A_imageIlluminance, Views_A, "Augmented Data")
+    summarize_colors(R_imageColor, R_imageSaturation, R_imageIlluminance, Views, "Real Data")
+    summarize_colors(O_imageColor, O_imageSaturation, O_imageIlluminance, Views, "Own Data")
+    summarize_colors(A_imageColor, A_imageSaturation, A_imageIlluminance, Views_A, "Augmented Data")
 
     # Compare frontal and lateral views across datasets
     datasets = [R_plateAngle, O_plateAngle, A_plateAngle]
@@ -326,6 +365,20 @@ def main():
 
 
 
+
+"""
+Explorar la distribucion de los histogramas para encontrar el protocolo.
+crear un protocolo con el que se creo la imagen: distancia color, esas caracteristicas son tu protocolo. Es decir, hay una distancia de la foto a la patente. 
+El protocolo lo define real_data, asi podes saber cuando la foto de entrada va a poder ser considerada. Definir entonces que imagenes se podran usar o no. 
+despues con lo de los kernels quizas si lo cambias te va a cambiar el tamaño de las patentes, y todo eso lo tenemos que entender, compararlo eso. 
+
+Dentro de los plots hacer lo del umbral/distribucion de los datos. por ejemplo el angulo o el zoom y ampliar la foto. despues de definir el protocolo, incluir o excluir fotos, volver 
+a plotear con los nuevos. 
+
+DISTRIBUCION Y ANALISIS DE DATOS. 
+
+poner el hue entre 0 y 360
+"""
 
 if __name__ == "__main__":
     main()
