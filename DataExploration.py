@@ -86,32 +86,51 @@ def computeProperties (DataDir,Views):
 
 
 
-#### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
+#### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEWz
 # We now save plots to disk instead of showing them interactively.
+from scipy.stats import gaussian_kde
+import numpy as np
+
 def Visualplots(dataset_name, Views, plateAngle, imageColor, 
-          imageIlluminance, imageSaturation, SHOW_SEPARATE=False, save_dir=PLOTS_DIR):
+                imageIlluminance, imageSaturation, SHOW_SEPARATE=False, save_dir=PLOTS_DIR):
 
     co=['b','c']  # colors for views
-    
+    alpha_val = 0.7  # transparency
+
+    def plot_hist_with_line(data_dict, title, filename, xlabel):
+        plt.figure()
+        for k, view in enumerate(Views):
+            # Plot histogram
+            counts, bins, _ = plt.hist(data_dict[view], bins=20, color=co[k], alpha=alpha_val, label=view)
+            
+            # KDE / smoothed distribution line scaled to histogram counts
+            if len(data_dict[view]) > 1:
+                kde = gaussian_kde(data_dict[view])
+                x_vals = np.linspace(min(data_dict[view]), max(data_dict[view]), 200)
+                # Scale KDE to match histogram
+                kde_scaled = kde(x_vals) * len(data_dict[view]) * (bins[1] - bins[0])
+                plt.plot(x_vals, kde_scaled, color=co[k], linewidth=2)
+        plt.title(f"{dataset_name} {title} (Combined)")
+        plt.xlabel(xlabel)
+        plt.ylabel("Frequency")
+        plt.legend()
+        plt.savefig(os.path.join(save_dir, filename))
+        plt.close()
+
+
     # -------------------------------------------------------------
-    ## Color Distribution
+    # Color
     if SHOW_SEPARATE:
         for k, view in enumerate(Views):
             plt.figure()
-            plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
+            plt.hist(imageColor[view], bins=20, color=co[k], alpha=alpha_val)
             plt.title(f'{dataset_name} Color Distribution - {view}')
             plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_{view}.png"))
             plt.close()
     else:
-        plt.figure()
-        for k, view in enumerate(Views):
-            plt.hist(imageColor[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{dataset_name} Color Distribution (Combined)')
-        plt.legend(Views)
-        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_Combined.png"))
-        plt.close()
+        plot_hist_with_line(imageColor, "Color Distribution", f"{dataset_name}_Color_Combined.png", "Hue")
 
-    # Boxplot
+    # Boxplot (unchanged)
     plt.figure()
     x=[imageColor[v] for v in Views]
     bpC = plt.boxplot(x, patch_artist=True, tick_labels=Views)
@@ -122,25 +141,18 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     plt.title(f'{dataset_name} Color Distribution')
     plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_Boxplot.png"))
     plt.close()
-    
 
     # -------------------------------------------------------------
-    ## Saturation
+    # Saturation
     if SHOW_SEPARATE:
         for k, view in enumerate(Views):
             plt.figure()
-            plt.hist(imageSaturation[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
+            plt.hist(imageSaturation[view], bins=20, color=co[k], alpha=alpha_val)
             plt.title(f'Saturation Distribution - {view}')
             plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_{view}.png"))
             plt.close()
     else:
-        plt.figure()
-        for k, view in enumerate(Views):
-            plt.hist(imageSaturation[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{dataset_name} Saturation Distribution (Combined)')
-        plt.legend(Views)
-        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_Combined.png"))
-        plt.close()
+        plot_hist_with_line(imageSaturation, "Saturation Distribution", f"{dataset_name}_Saturation_Combined.png", "Saturation")
 
     # Boxplot
     plt.figure()
@@ -154,24 +166,17 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_Boxplot.png"))
     plt.close()
 
-
     # -------------------------------------------------------------
-    ## Brightness
+    # Brightness
     if SHOW_SEPARATE:
         for k, view in enumerate(Views):
             plt.figure()
-            plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
+            plt.hist(imageIlluminance[view], bins=20, color=co[k], alpha=alpha_val)
             plt.title(f'{dataset_name} Brightness Distribution - {view}')
             plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_{view}.png"))
             plt.close()
     else:
-        plt.figure()
-        for k, view in enumerate(Views):
-            plt.hist(imageIlluminance[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{dataset_name} Brightness Distribution (Combined)')
-        plt.legend(Views)
-        plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_Combined.png"))
-        plt.close()
+        plot_hist_with_line(imageIlluminance, "Brightness Distribution", f"{dataset_name}_Brightness_Combined.png", "Brightness (V)")
 
     # Boxplot
     plt.figure()
@@ -186,22 +191,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     plt.close()
 
     # -------------------------------------------------------------
-    ## Camera ViewPoint
+    # Plate Angle / Viewpoint
     if SHOW_SEPARATE:
         for k, view in enumerate(Views):
             plt.figure()
-            plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
+            plt.hist(plateAngle[view], bins=20, color=co[k], alpha=alpha_val)
             plt.title(f'{dataset_name} View Point Distribution - {view}')
             plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_{view}.png"))
             plt.close()
     else:
-        plt.figure()
-        for k, view in enumerate(Views):
-            plt.hist(plateAngle[view], bins=20, edgecolor='k', color=co[k], alpha=0.7)
-        plt.title(f'{dataset_name} View Point Distribution (Combined)')
-        plt.legend(Views)
-        plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_Combined.png"))
-        plt.close()
+        plot_hist_with_line(plateAngle, "View Point Distribution", f"{dataset_name}_ViewPoint_Combined.png", "Angle (degrees)")
 
     # Boxplot
     plt.figure()
@@ -313,7 +312,7 @@ def compare_plate_angles(datasets, views, dataset_names, save_dir=PLOTS_DIR):
             mean_angle = np.mean(angles)
             std_angle = np.std(angles)
             print(f"{name}: mean={mean_angle:.2f}, std={std_angle:.2f}, n={len(angles)}")
-            plt.hist(angles, bins=20, alpha=0.5, edgecolor='k', label=name)
+            plt.hist(angles, bins=20, alpha=0.5, label=name)
         
         plt.title(f"Plate Angle Distribution - {view}")
         plt.xlabel("Angle (degrees)")
