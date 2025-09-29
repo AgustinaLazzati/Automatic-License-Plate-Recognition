@@ -55,7 +55,16 @@ def analyze_datasets(datasets):
 
                 #IF NO PLATES DETECTED, WE WILL ZOOM IN OR ZOOM OUT THE IMAGE.
                 if len(plates) == 0:
-                    # Zoom-in: crop center 70% and resize back
+                    # Zoom-in: crop center 90% and resize back 
+                    h, w = img.shape[:2]
+                    crop_x1, crop_y1 = int(w * 0.05), int(h * 0.05)
+                    crop_x2, crop_y2 = int(w * 0.95), int(h * 0.95)
+                    cropped = img[crop_y1:crop_y2, crop_x1:crop_x2]
+                    zoomed_in = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_CUBIC)
+                    plates, _ = detectPlates(zoomed_in)
+
+                if len(plates) == 0:
+                    # MORE AGRESSIVE Zoom-in: crop center 70% and resize back
                     h, w = img.shape[:2]
                     crop_x1, crop_y1 = int(w*0.15), int(h*0.15)
                     crop_x2, crop_y2 = int(w*0.85), int(h*0.85)
