@@ -21,7 +21,6 @@ def normalize_view(view):
         return "Lateral"
     return view  # fallback
 
-
 def analyze_datasets(datasets):
     # Counting images per folder
     image_counts = {}
@@ -53,6 +52,29 @@ def analyze_datasets(datasets):
                 if img is None:
                     continue
                 plates, _ = detectPlates(img)
+
+                #IF NO PLATES DETECTED, WE WILL ZOOM IN OR ZOOM OUT THE IMAGE.
+                if len(plates) == 0:
+                    # Zoom-in: crop center 70% and resize back
+                    h, w = img.shape[:2]
+                    crop_x1, crop_y1 = int(w*0.15), int(h*0.15)
+                    crop_x2, crop_y2 = int(w*0.85), int(h*0.85)
+                    cropped = img[crop_y1:crop_y2, crop_x1:crop_x2]
+                    zoomed_in = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_CUBIC)
+                    plates, _ = detectPlates(zoomed_in)
+
+                if len(plates) == 0:
+                    # Zoom-out: add black padding and resize back
+                    zoom_factor = 1.5
+                    new_h, new_w = int(h*zoom_factor), int(w*zoom_factor)
+                    canvas = np.zeros((new_h, new_w, 3), dtype=np.uint8)
+                    y_offset = (new_h - h)//2
+                    x_offset = (new_w - w)//2
+                    canvas[y_offset:y_offset+h, x_offset:x_offset+w] = img
+                    zoomed_out = cv2.resize(canvas, (w, h), interpolation=cv2.INTER_CUBIC)
+                    plates, _ = detectPlates(zoomed_out)
+
+                
                 if len(plates) > 0:
                     detected += 1
 
