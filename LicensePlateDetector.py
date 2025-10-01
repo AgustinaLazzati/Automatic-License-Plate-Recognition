@@ -20,7 +20,7 @@ import os
 import argparse
 import random
 
-SHOW = 0
+SHOW = 1
 minPlateW = 100
 minPlateH = 30
 
@@ -110,28 +110,24 @@ def detectPlates(image):
 
 def main():
     parser = argparse.ArgumentParser(description="Detect license plates in images.")
+
     parser.add_argument(
-        "datapath", type=str, help="Path to the directory containing images."
+        "datapath", type=str, nargs="?", default=os.path.join(".", "data", "Frontal"), help="Path to the directory containing images."
     )
     args = parser.parse_args()
 
-    # CHANGE BECAUSE IT WASNT WORRKING FOR ME, I THINK THAT ITS BECAUSE THE DIFERENT \ AND / 
-    # datapath = args.datapath
-    # Updated to use relative path if no argument is given
-    if args.datapath:
-        datapath = args.datapath
-    else:
-        datapath = "./data/Frontal"  # default relative path
+    # The datapath is already handled by argparse with a default value
+    datapath = args.datapath
 
-    # Normalize the path to avoid issues with slashes/backslashes
-    datapath = os.path.abspath(datapath).replace("\\", "/")
+    # Normalize the path to an absolute path for robustness.
+    datapath = os.path.abspath(datapath)
 
     if not os.path.isdir(datapath):
         print(f"Error: Directory '{datapath}' not found.")
         return
 
     image_files = [
-        f for f in os.listdir(datapath) if f.endswith((".jpg", ".jpeg", ".png"))
+        f for f in os.listdir(datapath) if f.lower().endswith((".jpg", ".jpeg", ".png"))
     ]
 
     if not image_files:

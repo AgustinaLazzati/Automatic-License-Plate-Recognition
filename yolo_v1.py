@@ -1,45 +1,70 @@
+import time
 # import the necessary packages
 import numpy as np
 import cv2
 import glob
 import os
+import argparse
+import random
 from imutils import perspective
 from matplotlib import pyplot as plt
 
 from ultralytics import YOLO
 
-#### EXP-SET UP
-# DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
-Views=['Frontal','Lateral']
-
-
-
-# Load YOLO model
-model = YOLO("YOLO.pt") # Trained on COCO DataSet
-modelclasses=np.array(list(model.names.values()))
-model.device # By default model is in GPU device: model=model.to('cpu') for execution in CPU
-
-
-#### COMPUTE PROPERTIES FOR EACH VIEW
-yoloConf={}
-yoloObj={}
-for View in Views:
+def main():
+    parser = argparse.ArgumentParser(description="Detect license plates in images.")
+    parser.add_argument(
+        "datapath", type=str, nargs="?", default=os.path.join(".", "data", "real_plates", "Frontal"), help="Path to the directory containing images."
+    )
+    args = parser.parse_args()
     
-    ImageFiles=sorted(glob.glob(os.path.join(DataDir,View,'*.jpg')))
-    yoloConf[View]=[]
-    yoloObj[View]=[]
+    datapath = args.datapath
+    datapath = os.path.abspath(datapath)
 
-    # loop over the images
-    for imagePath in ImageFiles:
-        # load the image
-        image = cv2.imread(imagePath)
-        img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = model(img_rgb) 
-        obj=results[0].boxes.cls.cpu().numpy().astype(int)
-        yoloObj[View].append(obj)
-        yoloConf[View].append(results[0].boxes.conf.cpu().numpy())
-        # Show results
-        results[0].show()
+    if not os.path.isdir(datapath):
+        print(f"Error: Directory '{datapath}' not found.")
+        return
 
-####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
+    image_files = [
+        f for f in os.listdir(datapath) if f.lower().endswith((".jpg", ".jpeg", ".png"))
+    ]
+
+    if not image_files:
+        print(f"Error: No images found in '{datapath}'.")
+        return
+
+    image_name = random.choice(image_files)
+    image_path = os.path.join(datapath, image_name)
+    
+    print(f"Processing image: {image_path}")
+
+    # Load YOLO model
+    model = YOLO("yolov5nu.pt")
+    print(model)
+    
+    # Process the single image
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Error: Could not read the image at '{image_path}'.")
+        return
+
+    img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    time1 = time.time()
+    print(time1)
+    results = model.predict(img_rgb, conf=.8)
+    
+    
+    # Show results
+    for r in results:
+        im_array = r.plot()
+        im = cv2.cvtColor(im_array, cv2.COLOR_BGR2RGB)
+        plt.figure(figsize=(10, 8))
+        plt.imshow(im)
+        plt.title(f"YOLOv8 Detection for {image_name}")
+        plt.axis('off')
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()
