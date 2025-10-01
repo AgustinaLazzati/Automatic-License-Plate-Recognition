@@ -16,6 +16,7 @@ import cv2
 import glob
 import os
 from imutils import perspective
+from scipy.stats import gaussian_kde
 from matplotlib import pyplot as plt
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
@@ -24,7 +25,6 @@ from LicensePlateDetector import detectPlates
 
 """
 #### EXP-SET UP
-<<<<<<< HEAD
 # DB Main Folder (MODIFY ACCORDING TO YOUR LOCAL PATH)
 DataDir=r'data/Patentes'
 Views=['FrontalAugmented','LateralAugmented']
@@ -39,11 +39,6 @@ def setup_plots_folder():
     # We do NOT delete the folder or its contents to avoid permission/locking issues on Windows.
     os.makedirs(PLOTS_DIR, exist_ok=True)
 
-=======
-# DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'data/real_plates'
-Views=['Frontal','Lateral']
->>>>>>> 7d8592c (yolo stuff)
 
 
 #### COMPUTE PROPERTIES FOR EACH VIEW
@@ -92,10 +87,54 @@ def computeProperties (DataDir,Views):
 
 
 
-#### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEWz
+#### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
 # We now save plots to disk instead of showing them interactively.
-from scipy.stats import gaussian_kde
-import numpy as np
+def styled_boxplot(data_list, labels, box_colors, title, ylabel, save_path=None, show_plot=False):
+    """
+    Create a styled boxplot in the Insights style:
+    - Colored boxes (semi-transparent)
+    - Median line thick and black
+    - Whiskers & caps dashed
+    - Outliers colored like the box
+    """
+    plt.figure(figsize=(8,6))
+    bp = plt.boxplot(data_list, patch_artist=True, tick_labels=labels, showfliers=True)
+
+    # Style boxes
+    for patch, color in zip(bp['boxes'], box_colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+
+    # Style medians
+    for median in bp['medians']:
+        median.set_color('black')
+        median.set_linewidth(2)
+
+    # Style whiskers and caps as dashed lines
+    for whisker in bp['whiskers']:
+        whisker.set_linestyle('--')
+        whisker.set_color('black')
+        whisker.set_linewidth(1)
+    for cap in bp['caps']:
+        cap.set_linestyle('--')
+        cap.set_color('black')
+        cap.set_linewidth(1)
+
+    # Style outliers
+    for i, flier in enumerate(bp['fliers']):
+        flier.set(marker='o', color=box_colors[i], alpha=1, markersize=6)
+
+    plt.title(title)
+    plt.ylabel(ylabel)
+
+    if save_path:
+        plt.savefig(save_path)
+        plt.close()
+    elif show_plot:
+        plt.show()
+    else:
+        plt.close()
+
 
 def Visualplots(dataset_name, Views, plateAngle, imageColor, 
                 imageIlluminance, imageSaturation, SHOW_SEPARATE=False, save_dir=PLOTS_DIR):
@@ -136,17 +175,17 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
     else:
         plot_hist_with_line(imageColor, "Color Distribution", f"{dataset_name}_Color_Combined.png", "Hue")
 
-    # Boxplot (unchanged)
-    plt.figure()
+    # Boxplot
     x=[imageColor[v] for v in Views]
-    bpC = plt.boxplot(x, patch_artist=True, tick_labels=Views)
-    for patch, color in zip(bpC['boxes'], co):
-        patch.set_facecolor(color)
-    for median in bpC['medians']:
-        median.set(color='black', linewidth=2)
-    plt.title(f'{dataset_name} Color Distribution')
-    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Color_Boxplot.png"))
-    plt.close()
+    styled_boxplot(
+        data_list=x,
+        labels=Views,
+        box_colors=co,
+        title=f'{dataset_name} Color Distribution',
+        ylabel='Hue',
+        save_path=os.path.join(save_dir, f"{dataset_name}_Color_Boxplot.png"),
+        show_plot=SHOW_SEPARATE
+    )
 
     # -------------------------------------------------------------
     # Saturation
@@ -161,16 +200,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
         plot_hist_with_line(imageSaturation, "Saturation Distribution", f"{dataset_name}_Saturation_Combined.png", "Saturation")
 
     # Boxplot
-    plt.figure()
     x=[imageSaturation[v] for v in Views]
-    bpS = plt.boxplot(x, patch_artist=True, tick_labels=Views)
-    for patch, color in zip(bpS['boxes'], co):
-        patch.set_facecolor(color)
-    for median in bpS['medians']:
-        median.set(color='black', linewidth=2)
-    plt.title(f'{dataset_name} Saturation Distribution')
-    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Saturation_Boxplot.png"))
-    plt.close()
+    styled_boxplot(
+        data_list=x,
+        labels=Views,
+        box_colors=co,
+        title=f'{dataset_name} Saturation Distribution',
+        ylabel='Saturation',
+        save_path=os.path.join(save_dir, f"{dataset_name}_Saturation_Boxplot.png"),
+        show_plot=SHOW_SEPARATE
+    )
 
     # -------------------------------------------------------------
     # Brightness
@@ -185,16 +224,16 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
         plot_hist_with_line(imageIlluminance, "Brightness Distribution", f"{dataset_name}_Brightness_Combined.png", "Brightness (V)")
 
     # Boxplot
-    plt.figure()
     x=[imageIlluminance[v] for v in Views]
-    bpB = plt.boxplot(x, patch_artist=True, tick_labels=Views)
-    for patch, color in zip(bpB['boxes'], co):
-        patch.set_facecolor(color)
-    for median in bpB['medians']:
-        median.set(color='black', linewidth=2)
-    plt.title(f'{dataset_name} Brightness Distribution')
-    plt.savefig(os.path.join(save_dir, f"{dataset_name}_Brightness_Boxplot.png"))
-    plt.close()
+    styled_boxplot(
+        data_list=x,
+        labels=Views,
+        box_colors=co,
+        title=f'{dataset_name} Brightness Distribution',
+        ylabel='Brightness (V)',
+        save_path=os.path.join(save_dir, f"{dataset_name}_Brightness_Boxplot.png"),
+        show_plot=SHOW_SEPARATE
+    )
 
     # -------------------------------------------------------------
     # Plate Angle / Viewpoint
@@ -209,16 +248,17 @@ def Visualplots(dataset_name, Views, plateAngle, imageColor,
         plot_hist_with_line(plateAngle, "View Point Distribution", f"{dataset_name}_ViewPoint_Combined.png", "Angle (degrees)")
 
     # Boxplot
-    plt.figure()
     x=[plateAngle[v] for v in Views]
-    bpV = plt.boxplot(x, patch_artist=True, tick_labels=Views)
-    for patch, color in zip(bpV['boxes'], co):
-        patch.set_facecolor(color)
-    for median in bpV['medians']:
-        median.set(color='black', linewidth=2)
-    plt.title(f'{dataset_name} View Point Distribution')
-    plt.savefig(os.path.join(save_dir, f"{dataset_name}_ViewPoint_Boxplot.png"))
-    plt.close()
+    styled_boxplot(
+        data_list=x,
+        labels=Views,
+        box_colors=co,
+        title=f'{dataset_name} View Point Distribution',
+        ylabel='Angle (degrees)',
+        save_path=os.path.join(save_dir, f"{dataset_name}_ViewPoint_Boxplot.png"),
+        show_plot=SHOW_SEPARATE
+    )
+
 
 
 # With this functions, we are going to translate the Hue values to be interpretable for humans 
@@ -258,7 +298,6 @@ def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, datas
     """Summarize car colors per dataset using existing dictionaries, with bar chart."""
     colors = []
     
-<<<<<<< HEAD
     # Iterate through all images in all views
     for v in Views:
         for i in range(len(imageColor[v])):
@@ -305,52 +344,6 @@ def summarize_colors(imageColor, imageSaturation, imageIlluminance, Views, datas
         plt.close()
     
     return color_counts
-=======
-    ImageFiles=sorted(glob.glob(os.path.join(DataDir,View,'*.jpg')))
-    plateArea[View]=[]
-    plateAngle[View]=[]
-    imageColor[View]=[]
-    imageIlluminance[View]=[]
-    imageSaturation[View]=[]
-    # loop over the images
-    for imagePath in ImageFiles:
-        # load the image
-        image = cv2.imread(imagePath)
-        # Image Color and Illuminance properties
-        imageColor[View].append(np.mean(cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,0].flatten()))
-        imageIlluminance[View].append(np.mean(cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,2].flatten()))
-        imageSaturation[View].append(np.mean(cv2.cvtColor(image, cv2.COLOR_BGR2HSV)[:,:,1].flatten()))
-        # Image ViewPoint (orientation with respect frontal view and focal distance)
-        regions, _ =detectPlates(image)  #OUR detectPlates RETURNS (regions, image)
-        for reg in regions:
-            # Region Properties
-            reg = np.array(reg, dtype=np.float32)   # ensuring type is correct
-            rect = cv2.minAreaRect(reg)
-            
-            plateArea[View].append(np.prod(rect[1]))
-            # Due to the way cv2.minAreaRect computes the sides of the rectangle
-            # (https://namkeenman.wordpress.com/2015/12/18/open-cv-determine-angle-of-rotatedrect-minarearect/)
-            # Depending on view point, the estimated rectangle has not
-            # the largest side along the horizontal axis. This cases are corrected to ensure that orientations
-            # are always with respect the largest side 
-            if (rect[1][0]<rect[1][1]):
-                plateAngle[View].append(rect[2]-90)
-            else:
-                plateAngle[View].append(rect[2])
-            
-#### VISUALLY EXPLORE PROPERTIES DISTRIBUTION FOR EACH VIEW
-# -------------------------------------------------------------
-## Color Distribution
-# Histograms
-co=['b','r']
-plt.figure()  
-for k in np.arange(len(Views)):
-    plt.hist(imageColor[Views[k]],bins=20,edgecolor='k',color=co[k],alpha=1-0.5*k)  
-plt.title('Color Distribution')
-plt.legend(Views)   
-# BoxPlots
-x=[]   
->>>>>>> 7d8592c (yolo stuff)
 
 # Viewponts distribution
 def compare_plate_angles(datasets, views, dataset_names, save_dir=PLOTS_DIR):
@@ -398,20 +391,20 @@ def main():
     if PLOT:
        Visualplots('Own Data', Views, O_plateAngle, O_imageColor, O_imageIlluminance, O_imageSaturation)
     
-    Augmented_DataDir=r'data/Patentes'
-    Views_A=['FrontalAugmented','LateralAugmented']
-    A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation = computeProperties(Augmented_DataDir, Views_A)
-    if PLOT:
-       Visualplots('Augmented Data', Views_A, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
+    #Augmented_DataDir=r'data/Patentes'
+    #Views_A=['FrontalAugmented','LateralAugmented']
+    #A_plateArea, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation = computeProperties(Augmented_DataDir, Views_A)
+    #if PLOT:
+    #   Visualplots('Augmented Data', Views_A, A_plateAngle, A_imageColor, A_imageIlluminance, A_imageSaturation)
 
     # Interpreting what colors have the cars of our data set...
     summarize_colors(R_imageColor, R_imageSaturation, R_imageIlluminance, Views, "Real Data")
     summarize_colors(O_imageColor, O_imageSaturation, O_imageIlluminance, Views, "Own Data")
-    summarize_colors(A_imageColor, A_imageSaturation, A_imageIlluminance, Views_A, "Augmented Data")
+    #summarize_colors(A_imageColor, A_imageSaturation, A_imageIlluminance, Views_A, "Augmented Data")
 
     # Compare frontal and lateral views across datasets
-    datasets = [R_plateAngle, O_plateAngle, A_plateAngle]
-    dataset_names = ["Real Data", "Own Data", "Augmented Data"]
+    datasets = [R_plateAngle, O_plateAngle]
+    dataset_names = ["Real Data", "Own Data"]
     views_to_compare = ["Frontal", "Lateral"]  # For augmented, adjust names if needed
     compare_plate_angles(datasets, views_to_compare, dataset_names)
 
