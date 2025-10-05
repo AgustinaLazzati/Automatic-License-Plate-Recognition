@@ -1,6 +1,10 @@
 data/
 roboflow_dataset/
 
+real_plates/
+own_plates/
+downloaded_images/
+random_images/
 
 
 # Byte-compiled / optimized / DLL files
