@@ -116,7 +116,7 @@ def main():
         # We only plot the first half of the FFT result due to symmetry
         N = len(data1[i])
         ax.plot(np.arange(1, N // 2), data1[i][1:N // 2], color='#1f77b4', label=label1)
-        ax.plot(np.arange(1, N // 2), data2[i][1:N // 2], color='#ff7f0e', label=label2)
+        ax.plot(np.arange(1, N // 2), data2[i][1:N // 2], color="#0eebff", label=label2)
         
         ax.set_title(f'Frequency Spectrum of Average {title}')
         ax.set_ylabel('Magnitude')

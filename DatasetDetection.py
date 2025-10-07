@@ -10,7 +10,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from LicensePlateDetector import detectPlates  
+from ExploreParameters import detectPlates  
 
 
 def normalize_view(view):
@@ -52,7 +52,7 @@ def analyze_datasets(datasets):
                 if img is None:
                     continue
                 plates, _ = detectPlates(img)
-
+         
                 #IF NO PLATES DETECTED, WE WILL ZOOM IN OR ZOOM OUT THE IMAGE.
                 if len(plates) == 0:
                     # Zoom-in: crop center 90% and resize back 
@@ -82,7 +82,7 @@ def analyze_datasets(datasets):
                     canvas[y_offset:y_offset+h, x_offset:x_offset+w] = img
                     zoomed_out = cv2.resize(canvas, (w, h), interpolation=cv2.INTER_CUBIC)
                     plates, _ = detectPlates(zoomed_out)
-
+                  
                 
                 if len(plates) > 0:
                     detected += 1
