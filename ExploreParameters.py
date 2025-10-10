@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import os
 import argparse
 
-SHOW = 0
+SHOW = 1
 
 # Plate size thresholds (smaller min size for distant plates)
 minPlateW = 60   # previously 100
@@ -43,10 +43,7 @@ def detectPlates(image):
 
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # ----------------------------
     # Step 1: Blackhat
-    # ----------------------------
     blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, squareKernel, iterations=2)  # reduce iterations for distant, faint plates
     if SHOW:
         plt.figure()
@@ -54,9 +51,7 @@ def detectPlates(image):
         plt.title("Black Top Hat")
         plt.show()
 
-    # ----------------------------
     # Step 2: Gradient X
-    # ----------------------------
     gradX = cv2.Sobel(blackhat, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
     gradX = np.absolute(gradX)
     (minVal, maxVal) = (np.min(gradX), np.max(gradX))
@@ -67,9 +62,7 @@ def detectPlates(image):
         plt.title("Gradient X")
         plt.show()
 
-    # ----------------------------
     # Step 3: Blur + Close
-    # ----------------------------
     gradX = cv2.GaussianBlur(gradX, (5, 5), 0)  # slightly smaller blur for distant plates
     gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=1)  # fewer iterations
     if SHOW:
@@ -78,9 +71,7 @@ def detectPlates(image):
         plt.title("Blur + Close")
         plt.show()
 
-    # ----------------------------
     # Step 4: Threshold
-    # ----------------------------
     ThrValue = 0.30 * np.max(gradX)  # was 0.40
     ThrGradX = cv2.threshold(gradX, ThrValue, 255, cv2.THRESH_BINARY)[1]
     if SHOW:
@@ -89,9 +80,7 @@ def detectPlates(image):
         plt.title("Threshold")
         plt.show()
 
-    # ----------------------------
     # Step 5: Morphology
-    # ----------------------------
     thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=2)  # was 4
     thresh = cv2.dilate(thresh, rectKernel, iterations=1)  # was 2
     if SHOW:
@@ -100,9 +89,7 @@ def detectPlates(image):
         plt.title("Final Morphology")
         plt.show()
 
-    # ----------------------------
     # Step 6: Contour Detection
-    # ----------------------------
     (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for c in cnts:
@@ -157,7 +144,7 @@ def main():
 
     # Sort files to ensure consistent order and pick the first one
     image_files.sort()
-    image_name = image_files[4]
+    image_name = image_files[0]
 
     image_path = os.path.abspath(os.path.join(datapath, image_name)).replace("\\", "/")
     
