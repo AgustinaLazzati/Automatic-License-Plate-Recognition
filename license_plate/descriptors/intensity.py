@@ -32,6 +32,6 @@ class FeatureIntensity:
         """
         Calls the pixel features extractor and then flattens the matrix into a vector
         """
-        #pixel_features = self.extract_pixel_features(image)
-        return 0
+        pixel_features = self.extract_pixel_features(image)
+        return pixel_features.flatten()
         
