@@ -14,7 +14,11 @@ __email__ = "debora,gtorres@cvc.uab.es"
 
 import cv2
 import numpy as np
-img= ...
+
+img= cv2.imread('/home/tomiock/uni2025/vision/license/data/real_plates/Frontal/3340JMF.jpg')
+
+img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)c
+
 # Supongamos que 'img' es la imagen original en gris
 # 1. Umbral binario
 _, binary = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)

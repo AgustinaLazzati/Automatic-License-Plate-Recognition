@@ -112,7 +112,7 @@ def main():
     parser = argparse.ArgumentParser(description="Detect license plates in images.")
 
     parser.add_argument(
-        "datapath", type=str, nargs="?", default=os.path.join(".", "data", "Frontal"), help="Path to the directory containing images."
+        "datapath", type=str, nargs="?", default=os.path.join(".", "data", "real_plates", "Frontal"), help="Path to the directory containing images."
     )
     args = parser.parse_args()
 
