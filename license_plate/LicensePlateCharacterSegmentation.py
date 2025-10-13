@@ -86,7 +86,7 @@ def detectCharacterCandidates(image, reg, SHOW=1):
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     # Define path (adjust if necessary)
-    base_path = "./data/cropped_real_plates/Frontal"  # or "Lateral"
+    base_path = "./data/cropped_real_plates/Lateral"  # or "Lateral"
 
     # Load region data
     npz_path = os.path.join(base_path, "PlateRegions.npz")

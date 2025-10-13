@@ -20,6 +20,7 @@ from matplotlib import pyplot as plt
 import os
 from skimage.feature import blob_log  # <-- Added for LoG blob detection
 from skimage.color import rgb2gray    # <-- For grayscale conversion
+from scipy.ndimage import gaussian_laplace   # <-- Added for Gaussian Laplace filtering
 
 
 def detectCharacterCandidates(image, reg, SHOW=1):
@@ -70,7 +71,29 @@ def detectCharacterCandidates(image, reg, SHOW=1):
         for y, x, r in blobs:
             cv2.circle(vis_plate, (int(x), int(y)), int(r), (0, 0, 255), 1)
         cv2.imshow("Detected Blobs (LoG)", vis_plate)
+    
     # -------------------------------------------------------------------------
+    #  Detect blobs with gaussian_laplace function from scipy
+    # -------------------------------------------------------------------------
+    if blobs.size > 0:
+        # Estimate the appropriate isotropic Gaussian sigma for LoG detection
+        median_r = np.median(blobs[:, 2])
+        sigma = median_r / (2 * np.sqrt(2))
+        threshold_scipy = 0.03  # threshold for LoG peaks
+
+        # Prepare normalized grayscale image
+        gray = norm.astype(np.float32)
+
+        # Negative sign is used because characters are white on black
+        # blobs become positive peaks
+        log_response = -gaussian_laplace(gray, sigma=sigma)
+
+        # Threshold the LoG response to find candidates
+        candidates_scipy = (log_response > threshold_scipy).astype(np.uint8) * 255
+    
+    else:
+        candidates_scipy = np.zeros_like(thresh, dtype=np.uint8)
+        log_response = np.zeros_like(norm, dtype=np.float32)
 
     if (SHOW):
         print("START DIMENSIONAL ANALYSIS")
@@ -102,14 +125,42 @@ def detectCharacterCandidates(image, reg, SHOW=1):
         print("END DIMENSIONAL ANALYSIS")
 
     # return the license plate region, the thresholded image, the contour-based mask, and the LoG blob mask
-    return plate, thresh, MycharCandidates, blob_mask
+     # and the Gaussian Laplacian candidates and response
+    return plate, thresh, MycharCandidates, blob_mask, candidates_scipy, log_response
+
+
+
+def Preprocessing_PlateCharacters(plate, SHOW=0):
+    """
+    Apply morphological pre-processing to enhance plate characters for blob detection.
+
+    Returns:
+        enhanced (np.ndarray): Pre-processed grayscale image ready for blob detection
+    """
+    # Convert to grayscale
+    gray = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
+
+    # Apply Top-Hat and Black-Hat morphological operations to enhance contrast
+    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 3))
+    tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, rectKernel)
+    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, rectKernel)
+    enhanced = cv2.add(gray, tophat)
+    enhanced = cv2.subtract(enhanced, blackhat)
+
+    # Apply a slight Gaussian blur to reduce noise
+    enhanced = cv2.GaussianBlur(enhanced, (3, 3), 0)
+
+    if SHOW:
+        cv2.imshow("Enhanced Plate", enhanced)
+
+    return enhanced
 
 
 # MAIN FUNCTION FOR EXERCISE 1
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     # Define path (adjust if necessary)
-    base_path = "./data/cropped_real_plates/Lateral"  # or "Lateral"
+    base_path = "./data/cropped_real_plates/Frontal"  # or "Lateral"
 
     # Load region data
     npz_path = os.path.join(base_path, "PlateRegions.npz")
@@ -131,34 +182,46 @@ if __name__ == "__main__":
         image = cv2.imread(img_path)
         reg = np.array(regionsImCropped[idx], dtype="float32")
 
+        #ADD HERE THE PREPROCESSING CALL.
+
         # Run the segmentation
-        plate, thresh, candidates, blob_mask = detectCharacterCandidates(image, reg, SHOW=1)
+        plate, thresh, candidates, blob_mask, candidates_scipy, log_response = detectCharacterCandidates(image, reg, SHOW=1)
 
         # Visualize intermediate and final outputs
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(15, 6))
 
-        plt.subplot(1, 4, 1)
+        plt.subplot(2, 3, 1)
         plt.title("Plate Region")
         plt.imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
         plt.axis("off")
 
-        plt.subplot(1, 4, 2)
+        plt.subplot(2, 3, 2)
         plt.title("Thresholded (Adaptive)")
         plt.imshow(thresh, cmap="gray")
         plt.axis("off")
 
-        plt.subplot(1, 4, 3)
+        plt.subplot(2, 3, 3)
         plt.title("Contour Candidates")
         plt.imshow(candidates, cmap="gray")
         plt.axis("off")
 
-        plt.subplot(1, 4, 4)
-        plt.title("LoG Blob Detection")
+        plt.subplot(2, 3, 4)
+        plt.title("LoG Blob Detection (skimage)")
         plt.imshow(blob_mask, cmap="gray")
+        plt.axis("off")
+        
+        plt.subplot(2, 3, 5)
+        plt.title("Gaussian Laplacian Response (scipy)")
+        plt.imshow(log_response, cmap='gray')
+        plt.axis("off")
+
+        plt.subplot(2, 3, 6)
+        plt.title("Thresholded LoG Candidates (scipy)")
+        plt.imshow(candidates_scipy, cmap='gray')
         plt.axis("off")
 
         # Adjust layout and title position
-        plt.suptitle(f"Character Segmentation: {img_name}", fontsize=14, y=0.65)
+        plt.suptitle(f"Character Segmentation: {img_name}", fontsize=14, y=0.85)
         plt.tight_layout(rect=[0, 0, 1, 0.93])
         plt.show()
 
