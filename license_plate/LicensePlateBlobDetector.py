@@ -22,30 +22,52 @@ from skimage.feature import blob_log  # <-- Added for LoG blob detection
 from skimage.color import rgb2gray    # <-- For grayscale conversion
 from scipy.ndimage import gaussian_laplace   # <-- Added for Gaussian Laplace filtering
 
+def preprocess_enhance_plate(thresh, SHOW=1):
+    #Morphological post-processing for binary license plate mask.
+    close_size = (3, 3)
+    open_size  = (2, 2)
+    iterations = 1
 
-def detectCharacterCandidates(image, reg, SHOW=1):
+    # Closing to fill small gaps in characters
+    kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, close_size)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel_close, iterations=iterations)
+
+    # Opening to remove small isolated noise
+    kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, open_size)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_open, iterations=iterations)
+
+    # Slight blur to smooth contours. BUT THIS DIDNT WORKED
+    #thresh = cv2.GaussianBlur(thresh, (3, 3), 0)
+
+    if SHOW:
+        cv2.imshow("Morphological Postprocessing", imutils.resize(thresh, width=400))
+
+    return thresh
+
+
+
+def detectCharacterCandidates(image, reg, SHOW=1, PREPROCESSING=1):
     # apply a 4-point transform to extract the license plate
     plate = perspective.four_point_transform(image, reg)
     plate = imutils.resize(plate, width=400)
 
     if (SHOW):
         cv2.imshow("Perspective Transform", plate)
-    
-    # extract the Value component from the HSV color space and apply adaptive thresholding
-    # to reveal the characters on the license plate
+
     V = cv2.split(cv2.cvtColor(plate, cv2.COLOR_BGR2HSV))[2]        
     thresh = cv2.adaptiveThreshold(V, 255 ,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 51, 15)
     if (SHOW):
         cv2.imshow("Adaptative Threshold", thresh)
 
-    # Structuring Element  rectangular shape (width 1 hight 3)
     rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))
 
-    # clossing follow by an opening to fill holes and join regions
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, rectKernel, iterations=2)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, rectKernel, iterations=2)
 
-    # resize the license plate region 
+    #CALLING THE PREPROCESSING
+    if PREPROCESSING:
+        thresh = preprocess_enhance_plate(thresh, SHOW)
+
     thresh = imutils.resize(thresh, width=400)
 
     # -------------------------------------------------------------------------
@@ -79,7 +101,7 @@ def detectCharacterCandidates(image, reg, SHOW=1):
         # Estimate the appropriate isotropic Gaussian sigma for LoG detection
         median_r = np.median(blobs[:, 2])
         sigma = median_r / (2 * np.sqrt(2))
-        threshold_scipy = 0.03  # threshold for LoG peaks
+        threshold_scipy = 0.04  # threshold for LoG peaks
 
         # Prepare normalized grayscale image
         gray = norm.astype(np.float32)
@@ -104,15 +126,10 @@ def detectCharacterCandidates(image, reg, SHOW=1):
     # loop over the contours
     MycharCandidates = np.zeros(thresh.shape, dtype="uint8")
     for c in cnts:
-        # grab the bounding box associated with the contour and compute the area and
-        # aspect ratio
         (x, y, w, h) = cv2.boundingRect(c)
-
-        # condition of not touching the border of the region
         NotouchBorder = x != 0 and y != 0 and x + w != DimX and y + h != DimY
         
         if (NotouchBorder):
-            # hight ratio of the blob numbers are blobs with a hight near the DimY
             hW = (h / float(DimY))
             area = cv2.contourArea(c)
             if (SHOW):
@@ -129,31 +146,50 @@ def detectCharacterCandidates(image, reg, SHOW=1):
     return plate, thresh, MycharCandidates, blob_mask, candidates_scipy, log_response
 
 
-
-def Preprocessing_PlateCharacters(plate, SHOW=0):
+def postprocess_character_candidates(candidate_map, plate, SHOW=1, area_limits=(200, 2500)):
     """
-    Apply morphological pre-processing to enhance plate characters for blob detection.
-
+    Refines the raw candidate map (from LoG or contour detection),
+    removes noise, extracts bounding boxes and crops each detected character.
     Returns:
-        enhanced (np.ndarray): Pre-processed grayscale image ready for blob detection
+    --------
+    char_boxes : list of tuples
+        Each box as (x, y, w, h)
+    char_crops : list of np.ndarray
+        Cropped character images from the plate
+    clean_mask : np.ndarray
+        Binary mask after morphological refinement
     """
-    # Convert to grayscale
-    gray = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
+    # make sure we have a binary mask
+    if candidate_map.dtype != np.uint8:
+        candidate_map = ((candidate_map > 0) * 255).astype(np.uint8)
 
-    # Apply Top-Hat and Black-Hat morphological operations to enhance contrast
-    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 3))
-    tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, rectKernel)
-    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, rectKernel)
-    enhanced = cv2.add(gray, tophat)
-    enhanced = cv2.subtract(enhanced, blackhat)
+    #Morphological cleanup
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    clean_mask = cv2.morphologyEx(candidate_map, cv2.MORPH_OPEN, kernel, iterations=1)
+    clean_mask = cv2.morphologyEx(clean_mask, cv2.MORPH_CLOSE, kernel, iterations=1)
 
-    # Apply a slight Gaussian blur to reduce noise
-    enhanced = cv2.GaussianBlur(enhanced, (3, 3), 0)
+    #Find connected components (contours) 
+    contours, _ = cv2.findContours(clean_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    if SHOW:
-        cv2.imshow("Enhanced Plate", enhanced)
+    h_plate, w_plate = plate.shape[:2]
+    char_boxes, char_crops = [], []
 
-    return enhanced
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        area = w * h
+
+        #simple geometric filtering 
+        if area_limits[0] < area < area_limits[1]:
+            aspect = w / float(h)
+            if 0.2 < aspect < 1.5:  # characters are usually tall
+                char_boxes.append((x, y, w, h))
+                char_crops.append(plate[y:y+h, x:x+w])
+
+    #sort boxes from left to right 
+    char_boxes = sorted(char_boxes, key=lambda b: b[0])
+    char_crops = [crop for _, crop in sorted(zip([b[0] for b in char_boxes], char_crops))]
+
+    return char_boxes, char_crops, clean_mask
 
 
 # MAIN FUNCTION FOR EXERCISE 1
@@ -182,10 +218,8 @@ if __name__ == "__main__":
         image = cv2.imread(img_path)
         reg = np.array(regionsImCropped[idx], dtype="float32")
 
-        #ADD HERE THE PREPROCESSING CALL.
-
         # Run the segmentation
-        plate, thresh, candidates, blob_mask, candidates_scipy, log_response = detectCharacterCandidates(image, reg, SHOW=1)
+        plate, thresh, candidates, blob_mask, candidates_scipy, log_response = detectCharacterCandidates(image, reg, SHOW=1, PREPROCESSING=1)
 
         # Visualize intermediate and final outputs
         plt.figure(figsize=(15, 6))
@@ -224,6 +258,36 @@ if __name__ == "__main__":
         plt.suptitle(f"Character Segmentation: {img_name}", fontsize=14, y=0.85)
         plt.tight_layout(rect=[0, 0, 1, 0.93])
         plt.show()
+
+        #POST PROCESSING
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=1)
+        print(f"Detected {len(char_boxes)} character regions.")
+
+        plt.figure(figsize=(10, 5))
+
+        # Left: postprocessed mask
+        plt.subplot(1, 2, 1)
+        plt.imshow(refined_mask, cmap="gray")
+        plt.title("Postprocessed Mask")
+        plt.axis("off")
+
+        # Right: plate with bounding boxes
+        plt.subplot(1, 2, 2)
+        vis_plate = plate.copy()
+        for (x, y, w, h) in char_boxes:
+            cv2.rectangle(vis_plate, (x, y), (x + w, y + h), (0, 255, 0), 1)
+
+        plt.imshow(cv2.cvtColor(vis_plate, cv2.COLOR_BGR2RGB))
+        plt.title("Detected Character Boxes")
+        plt.axis("off")
+
+        plt.suptitle(f"Postprocessing Results: {img_name}", fontsize=13,  y=0.85)
+        plt.tight_layout()
+        plt.show()
+
+        # We could also save cropped characters
+        # for i, ch in enumerate(char_crops):
+        #     cv2.imwrite(f"./char_crops/char_{i}.png", ch)
 
         # stop after a few images
         if idx >= 1:
