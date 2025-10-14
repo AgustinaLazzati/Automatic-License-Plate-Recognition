@@ -14,10 +14,14 @@ __email__ = "debora,gtorres@cvc.uab.es"
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
-img= cv2.imread('/home/tomiock/uni2025/vision/license/data/real_plates/Frontal/3340JMF.jpg')
+img_path = 'data/Frontal/3340JMF.jpg'   #'/home/tomiock/uni2025/vision/license/data/real_plates/Frontal/3340JMF.jpg'
+img= cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Could not read image: {img_path}")
 
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)c
+img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 # Supongamos que 'img' es la imagen original en gris
 # 1. Umbral binario
@@ -42,8 +46,37 @@ markers[unknown==255] = 0
 img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 markers = cv2.watershed(img_color, markers)
 img_color[markers == -1] = [0,0,255]  # Bordes en rojo
+#watershed_result = img_color.copy()
+#watershed_result[markers == -1] = [0, 0, 255]  # red borders
 
 # 6. Visualización
 cv2.imshow("Watershed", img_color)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+
+#Ploting all steps in subplots
+fig, axes = plt.subplots(2, 4, figsize=(18, 9))
+axes = axes.ravel()
+
+images = [
+    (img, "Original Gray"),
+    (binary, "Binary (Otsu inv)"),
+    (opening, "Morphological Opening"),
+    (dist_transform / dist_transform.max(), "Distance Transform"),
+    (sure_fg, "Sure Foreground"),
+    (unknown, "Unknown Region"),
+    (markers, "Markers")
+    #(watershed_result[..., ::-1], "Watershed Result")  # BGR -> RGB for Matplotlib
+]
+
+for ax, (img_disp, title) in zip(axes, images):
+    if len(img_disp.shape) == 2:  # grayscale
+        ax.imshow(img_disp, cmap='gray')
+    else:  # color
+        ax.imshow(img_disp)
+    ax.set_title(title)
+    ax.axis('off')
+
+plt.tight_layout()
+plt.show()

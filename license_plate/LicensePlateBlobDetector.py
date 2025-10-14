@@ -196,7 +196,7 @@ def postprocess_character_candidates(candidate_map, plate, SHOW=1, area_limits=(
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     # Define path (adjust if necessary)
-    base_path = "./data/cropped_real_plates/Frontal"  # or "Lateral"
+    base_path = "./data/cropped_real_plates/Lateral"  # or "Lateral"
 
     # Load region data
     npz_path = os.path.join(base_path, "PlateRegions.npz")
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         plt.show()
 
         #POST PROCESSING
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=1)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates_scipy, plate, SHOW=1)
         print(f"Detected {len(char_boxes)} character regions.")
 
         plt.figure(figsize=(10, 5))
@@ -281,7 +281,7 @@ if __name__ == "__main__":
         plt.title("Detected Character Boxes")
         plt.axis("off")
 
-        plt.suptitle(f"Postprocessing Results: {img_name}", fontsize=13,  y=0.85)
+        plt.suptitle(f"Postprocessing Results: {img_name}", fontsize=13,  y=0.75)
         plt.tight_layout()
         plt.show()
 
