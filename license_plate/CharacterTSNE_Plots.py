@@ -93,12 +93,3 @@ for targetFeat in digitsFeat.keys():
     plt.title(targetFeat)
     plt.show()
   #  plt.savefig(os.path.join(ResultsDir,targetFeat+'DigitsFeatSpace.png'))
-    
-### VISUALIZE FEATURES IMAGES
-
-## LBP Images for Digits
-
-
-# HOG Images for Digits
-
-
