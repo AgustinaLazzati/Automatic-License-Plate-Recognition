@@ -132,9 +132,7 @@ plt.tight_layout()
 plt.show()
 
 ## LBP Images for Digits
-descLBP = FeatureLBP(
-    radius=5
-)
+descLBP = FeatureLBP()
 
 num_examples = 10
 example_images = digitsIms[:num_examples]

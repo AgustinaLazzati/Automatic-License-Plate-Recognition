@@ -46,7 +46,7 @@ class FeatureLBP:
         n_bins: Number of bins for histogram computation. 
         If no value is specified it is authomatically computed
     """
-    def __init__(self,radius=3,method='uniform',n_bins=None,lbp_type='simple'):
+    def __init__(self,radius=3, method='uniform', n_bins=None, lbp_type='simple'):
         
         self.radius = radius
         self.n_points = 8 * self.radius
