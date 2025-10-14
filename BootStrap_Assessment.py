@@ -31,7 +31,7 @@ from sklearn.metrics import precision_recall_fscore_support,precision_score, rec
 #### STEP0. EXP-SET UP
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Results'
+ResultsDir='data/Results'
 # Load Font DataSets
 fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    
 f=open(fileout, 'rb')
@@ -47,8 +47,6 @@ data=pickle.load(f)
 f.close()   
 digitsFeat=data['digitsFeat']
 digitsLabels=data['digitsLabels']
-
-
 
 
 #### DEFINE BINARY DATASET
@@ -71,6 +69,9 @@ aucKNN=[]
 recMLP=[]
 recSVC=[]
 recKNN=[]
+precMLP=[]
+precSVC=[]
+precKNN=[]
 for kTrial in np.arange(NTrial):
     # Random Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -92,6 +93,8 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     recSVC.append(rec)
+    precSVC.appen(prec)
+
     ##### KNN
     ## Train Model
     ModelKNN = KNeighborsClassifier(n_neighbors=10)
@@ -106,6 +109,8 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     recKNN.append(rec)
+    precKNN.appen(prec)
+
     #### MLP
     ## Train Model
     ModelMLP = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(15, 20), random_state=1,max_iter=100000)
@@ -120,21 +125,31 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     recMLP.append(rec)
+    precMLP.append(prec)
 
 #### STEP2. ANALYZE RESULTS
 ## Visual Exploration
-# recSVC=np.stack(recSVC)
-# recKNN=np.stack(recKNN)
-# recMLP=np.stack(recMLP)
-# #### Plots accoss trials (random splits)
-# plt.figure()
-# plt.plot(np.arange(NTrial),aucSVC,marker='o',c='b',markersize=10)
-# plt.plot(np.arange(NTrial),aucKNN,marker='o',c='r',markersize=10)
-# plt.plot(np.arange(NTrial),aucMLP,marker='o',c='g',markersize=10)
-# plt.legend(['SVM','KNN','MLP'])
-# plt.xticks(np.arange(NTrial), fontsize=10)
-# plt.xlabel("Trial", fontsize=15)
-# plt.ylabel("AUC", fontsize=15)
+recSVC=np.stack(recSVC)
+recKNN=np.stack(recKNN)
+recMLP=np.stack(recMLP)
 
+#### Plots accoss trials (random splits)
+plt.figure()
+plt.plot(np.arange(NTrial),aucSVC,marker='o',c='b',markersize=10)
+plt.plot(np.arange(NTrial),aucKNN,marker='o',c='r',markersize=10)
+plt.plot(np.arange(NTrial),aucMLP,marker='o',c='g',markersize=10)
+plt.legend(['SVM','KNN','MLP'])
+plt.xticks(np.arange(NTrial), fontsize=10)
+plt.xlabel("Trial", fontsize=15)
+plt.ylabel("AUC", fontsize=15)
+# Showing
+plt.savefig(os.path.join(ResultsDir, "auc_plot.png"))
+plt.show()
+
+# Print summary
+print("Average AUCs:")
+print("SVM:", np.mean(aucSVC))
+print("KNN:", np.mean(aucKNN))
+print("MLP:", np.mean(aucMLP))
 
 

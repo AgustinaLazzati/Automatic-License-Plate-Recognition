@@ -146,7 +146,7 @@ def detectCharacterCandidates(image, reg, SHOW=1, PREPROCESSING=1):
     return plate, thresh, MycharCandidates, blob_mask, candidates_scipy, log_response
 
 
-def postprocess_character_candidates(candidate_map, plate, SHOW=1, area_limits=(200, 2500)):
+def postprocess_character_candidates(candidate_map, plate, SHOW=1, area_limits=(100, 3500)):
     """
     Refines the raw candidate map (from LoG or contour detection),
     removes noise, extracts bounding boxes and crops each detected character.
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         plt.show()
 
         #POST PROCESSING
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates_scipy, plate, SHOW=1)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=1)
         print(f"Detected {len(char_boxes)} character regions.")
 
         plt.figure(figsize=(10, 5))
