@@ -72,6 +72,7 @@ recKNN=[]
 precMLP=[]
 precSVC=[]
 precKNN=[]
+
 for kTrial in np.arange(NTrial):
     # Random Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -93,7 +94,7 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     recSVC.append(rec)
-    precSVC.appen(prec)
+    precSVC.append(prec)
 
     ##### KNN
     ## Train Model
@@ -109,7 +110,7 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     recKNN.append(rec)
-    precKNN.appen(prec)
+    precKNN.append(prec)
 
     #### MLP
     ## Train Model
@@ -132,6 +133,10 @@ for kTrial in np.arange(NTrial):
 recSVC=np.stack(recSVC)
 recKNN=np.stack(recKNN)
 recMLP=np.stack(recMLP)
+
+precSVC = np.stack(precSVC)
+precKNN = np.stack(precKNN)
+precMLP = np.stack(precMLP)
 
 #### Plots accoss trials (random splits)
 plt.figure()

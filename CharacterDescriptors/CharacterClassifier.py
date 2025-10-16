@@ -15,9 +15,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
-from descriptors.lbp import FeatureLBP
-from descriptors.hog import FeatureHOG
+from Descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
+from Descriptors.lbp import FeatureLBP
+from Descriptors.hog import FeatureHOG
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
