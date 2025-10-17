@@ -62,7 +62,7 @@ X=np.concatenate((digits,chars))
 y=np.concatenate((digitsLab,charsLab))
 
 ### STEP1. TRAIN BINARY CLASSIFIERS [CHARACTER VS DIGITS]
-NTrial=20   #for exercise 1a) it was ask 1 trial. 
+NTrial=30   #for exercise 1a) it was ask 1 trial. 
 
 averages = ['micro', 'macro', 'weighted']
 
@@ -222,6 +222,47 @@ plt.ylabel("AUC", fontsize=15)
 #plt.savefig(os.path.join(ResultsDir, "auc_plot.png"))
 plt.show()
 
+
+#EXERCISE 2A) ------------------
+# Boxplot for AUC
+plt.figure(figsize=(8,5))
+plt.boxplot([aucSVC, aucKNN, aucMLP], tick_labels=['SVM','KNN','MLP'])
+plt.ylabel("AUC", fontsize=12)
+plt.title("Boxplot of AUC Across Trials")
+plt.show()
+
+# Histogram for AUC
+plt.figure(figsize=(8,5))
+plt.hist(aucSVC, bins=10, alpha=0.5, label='SVM', color='b')
+plt.hist(aucKNN, bins=10, alpha=0.5, label='KNN', color='purple')
+plt.hist(aucMLP, bins=10, alpha=0.5, label='MLP', color='c')
+plt.xlabel("AUC", fontsize=12)
+plt.ylabel("Frequency", fontsize=12)
+plt.title("Histogram of AUC Across Trials")
+plt.legend()
+plt.show()
+
+# Boxplot for Precision (macro) across trials
+plt.figure(figsize=(8,5))
+box = plt.boxplot([precSVC['macro'], precKNN['macro'], precMLP['macro']], 
+                  tick_labels=['SVM','KNN','MLP'])
+plt.ylabel("Precision (macro)", fontsize=12)
+plt.title("Boxplot of Precision Across Trials")
+plt.show()
+
+# Histogram for Precision (macro) across trials
+plt.figure(figsize=(8,5))
+plt.hist(precSVC['macro'], bins=10, alpha=0.6, label='SVM', color='b')
+plt.hist(precKNN['macro'], bins=10, alpha=0.6, label='KNN', color='purple')
+plt.hist(precMLP['macro'], bins=10, alpha=0.6, label='MLP', color='c')
+plt.xlabel("Precision (macro)", fontsize=12)
+plt.ylabel("Frequency", fontsize=12)
+plt.title("Histogram of Precision Across Trials")
+plt.legend()
+plt.show()
+
+
+#EXERCISE 1D)  -----------------
 # Accuracy
 plt.figure()
 plt.plot(np.arange(NTrial), accSVC, marker='o', c='b', markersize=10)
@@ -254,6 +295,7 @@ plt.xticks(np.arange(NTrial), fontsize=10)
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("Precision (macro)", fontsize=15)
 plt.show()
+#---------------------------
 
 # Print summary
 print("Average AUCs:")
