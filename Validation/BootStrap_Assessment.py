@@ -62,7 +62,7 @@ X=np.concatenate((digits,chars))
 y=np.concatenate((digitsLab,charsLab))
 
 ### STEP1. TRAIN BINARY CLASSIFIERS [CHARACTER VS DIGITS]
-NTrial=20
+NTrial=1   #for exercise 1a) it was ask 1 trial. 
 aucMLP=[]
 aucSVC=[]
 aucKNN=[]
