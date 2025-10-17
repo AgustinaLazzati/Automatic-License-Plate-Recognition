@@ -1,3 +1,6 @@
+### THIS FILE IS CREATED TO SIMPLY UNDERSTAND THE PROCESS OF THE MANUAL PLATE DETECTION. 
+### EXERCISE 3 SESSION 2. ---- when finished it and add it to the report it can be removed. 
+
 # -*- coding: utf-8 -*-
 """
 Created on Mon Sep 15 17:45:11 2025
@@ -18,33 +21,37 @@ import cv2
 from matplotlib import pyplot as plt
 import os
 import argparse
-import random
 
 SHOW = 1
-minPlateW = 100
-minPlateH = 30
 
+# Plate size thresholds (smaller min size for distant plates)
+minPlateW = 60   # previously 100
+minPlateH = 20   # previously 30
 
 def detectPlates(image):
     imHeight, imWidth = image.shape[:2]
 
+    # Resize image if too large for faster processing
     if image.shape[1] > 640:
         image = imutils.resize(image, width=640)
 
-    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 5))
-    squareKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    # Slightly larger kernels to capture faint/blurred edges
+    rectKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 7))  # was (15,5)
+    squareKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)) # was (3,3)
 
     regions = []
 
+    # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, squareKernel, iterations=3)
-
+    # Step 1: Blackhat
+    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, squareKernel, iterations=2)  # reduce iterations for distant, faint plates
     if SHOW:
         plt.figure()
         plt.imshow(blackhat, cmap="gray")
         plt.title("Black Top Hat")
         plt.show()
 
+    # Step 2: Gradient X
     gradX = cv2.Sobel(blackhat, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
     gradX = np.absolute(gradX)
     (minVal, maxVal) = (np.min(gradX), np.max(gradX))
@@ -55,55 +62,56 @@ def detectPlates(image):
         plt.title("Gradient X")
         plt.show()
 
-    gradX = cv2.GaussianBlur(gradX, (7, 7), 0)
-    gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=2)
+    # Step 3: Blur + Close
+    gradX = cv2.GaussianBlur(gradX, (5, 5), 0)  # slightly smaller blur for distant plates
+    gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=1)  # fewer iterations
     if SHOW:
         plt.figure()
         plt.imshow(gradX, cmap="gray")
-        plt.title("Gausian Gx")
+        plt.title("Blur + Close")
         plt.show()
 
-    ThrValue = (0.40) * np.max(gradX)
+    # Step 4: Threshold
+    ThrValue = 0.30 * np.max(gradX)  # was 0.40
     ThrGradX = cv2.threshold(gradX, ThrValue, 255, cv2.THRESH_BINARY)[1]
     if SHOW:
         plt.figure()
         plt.imshow(ThrGradX, cmap="gray")
-        plt.title("Threshold Gx")
+        plt.title("Threshold")
         plt.show()
 
-    thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=4)
-    thresh = cv2.dilate(thresh, rectKernel, iterations=2)
+    # Step 5: Morphology
+    thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=2)  # was 4
+    thresh = cv2.dilate(thresh, rectKernel, iterations=1)  # was 2
     if SHOW:
         plt.figure()
         plt.imshow(thresh, cmap="gray")
-        plt.title("Possible license plates")
+        plt.title("Final Morphology")
         plt.show()
 
-    (cnts, _) = cv2.findContours(
-        thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
+    # Step 6: Contour Detection
+    (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for c in cnts:
         (x, y, w, h) = cv2.boundingRect(c)
         area = cv2.contourArea(c)
         aspectRatio = w / float(h)
-        if SHOW:
-            print("BLOB ANALYSIS ->", x, y, w, h, aspectRatio, area)
 
         NotouchBorder = x != 0 and y != 0 and x + w != imWidth and y + h != imHeight
 
-        keepArea = area > 3400 and area < 8000
-        keepWidth = w > minPlateW and w <= 250
-        keepHeight = h > minPlateH and h <= 60
-        keepAspectRatio = 2.5 < w / h < 7
+        # Relax area and aspect ratio for distant plates
+        keepArea = area > 2000 and area < 10000  # was 3400-8000
+        keepWidth = w > minPlateW and w <= 300   # was <= 250
+        keepHeight = h > minPlateH and h <= 70   # was <= 60
+        keepAspectRatio = 2.0 < aspectRatio < 8  # was 2.5-7
 
         if all((NotouchBorder, keepAspectRatio, keepWidth, keepHeight, keepArea)):
             rect = cv2.minAreaRect(c)
             box = cv2.boxPoints(rect)
-
             regions.append(box)
             if SHOW:
                 print("REGION BOX ACCEPTED->", box)
+
     return regions, image
 
 
@@ -134,15 +142,14 @@ def main():
         print(f"Error: No images found in '{datapath}'.")
         return
 
-    image_name = random.choice(image_files)
-    
-    # PREVIOUS LINE------
-    # image_path = os.path.join(datapath, image_name)
-    # Updated to normalize path
+    # Sort files to ensure consistent order and pick the first one
+    image_files.sort()
+    image_name = image_files[0]
+
     image_path = os.path.abspath(os.path.join(datapath, image_name)).replace("\\", "/")
     
     print(f"Processing image: {image_path}")
-
+    
     image = cv2.imread(image_path)
 
     if image is None:

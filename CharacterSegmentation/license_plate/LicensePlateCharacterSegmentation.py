@@ -17,11 +17,10 @@ import numpy as np
 import imutils
 import cv2
 from matplotlib import pyplot as plt
+import os
 
 
-
-
-def detectCharacterCandidates(image, reg, SHOW=0):
+def detectCharacterCandidates(image, reg, SHOW=1):
     # apply a 4-point transform to extract the license plate
     plate = perspective.four_point_transform(image, reg)
     plate = imutils.resize(plate, width=400)
@@ -78,8 +77,63 @@ def detectCharacterCandidates(image, reg, SHOW=0):
     if (SHOW):            
         print("END DIMENSIONAL ANALYSIS")
 
-    
-
     # return the license plate region object containing the license plate, the thresholded
     # license plate, and the character candidates
     return plate, thresh, MycharCandidates
+
+
+# MAIN FUNCTION FOR EXERCISE 1
+# ---------------------------------------------------------------
+if __name__ == "__main__":
+    # Define path (adjust if necessary)
+    base_path = "./data/cropped_real_plates/Lateral"  # or "Lateral"
+
+    # Load region data
+    npz_path = os.path.join(base_path, "PlateRegions.npz")
+    data = np.load(npz_path, allow_pickle=True)
+
+    print("Variables in PlateRegions.npz:", data.files)
+    regionsImCropped = data["regionsImCropped"]
+    ImID = data["imID"]
+
+    # Loop over some plates 
+    for idx, img_name in enumerate(ImID):
+        img_filename = f"{img_name}_MLPlate0.png"
+        img_path = os.path.join(base_path, img_filename)
+
+        if not os.path.exists(img_path):
+            print(f"Image not found: {img_filename}")
+            continue
+
+        image = cv2.imread(img_path)
+        reg = np.array(regionsImCropped[idx], dtype="float32")
+
+        # Run the segmentation
+        plate, thresh, candidates = detectCharacterCandidates(image, reg, SHOW=1)
+
+        # Visualize intermediate and final outputs
+        plt.figure(figsize=(10, 6))
+
+        plt.subplot(1, 3, 1)
+        plt.title("Plate Region")
+        plt.imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
+        plt.axis("off")
+
+        plt.subplot(1, 3, 2)
+        plt.title("Thresholded (Adaptive)")
+        plt.imshow(thresh, cmap="gray")
+        plt.axis("off")
+
+        plt.subplot(1, 3, 3)
+        plt.title("Character Candidates")
+        plt.imshow(candidates, cmap="gray")
+        plt.axis("off")
+
+        # Adjust layout and title position
+        plt.suptitle(f"Character Segmentation: {img_name}", fontsize=14, y=0.65)
+        plt.tight_layout(rect=[0, 0, 1, 0.93])  # reduce top margin for less white space
+        plt.show()
+
+        # stop after a few images
+        if idx >= 1:
+            break
