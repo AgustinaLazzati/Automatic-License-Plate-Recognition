@@ -22,7 +22,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score,  roc_curve
 from sklearn.metrics import precision_recall_fscore_support,precision_score, recall_score, f1_score, accuracy_score, classification_report
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
@@ -68,6 +68,7 @@ averages = ['micro', 'macro', 'weighted']
 
 aucMLP, aucSVC, aucKNN = [], [], [] 
 accMLP, accSVC, accKNN = [], [], []
+rocSVC, rocKNN, rocMLP = [], [], []
 
 scores = ['micro', 'macro', 'weighted', 'class0', 'class1', 'fscore']
 # Initialize dictionary keys as empty lists for storing multiple trials
@@ -105,6 +106,8 @@ for kTrial in np.arange(NTrial):
     ## Metrics
     auc=roc_auc_score(y_test, pSVC[:,1])
     aucSVC.append(auc)
+    fpr_svc, tpr_svc, _ = roc_curve(y_test, pSVC[:,1])  
+    rocSVC.append((fpr_svc, tpr_svc))    
 
     # Precision & Recall for different averages
     y_pred=(pSVC[:,1]>=0.5).astype(int)
@@ -140,6 +143,8 @@ for kTrial in np.arange(NTrial):
     # Metrics
     auc=roc_auc_score(y_test, pKNN[:,1])
     aucKNN.append(auc)
+    fpr_knn, tpr_knn, _ = roc_curve(y_test, pKNN[:,1])   
+    rocKNN.append((fpr_knn, tpr_knn))
 
     y_pred=(pKNN[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
@@ -173,6 +178,8 @@ for kTrial in np.arange(NTrial):
     # Metrics
     auc=roc_auc_score(y_test, pMLP[:,1])
     aucMLP.append(auc)
+    fpr_mlp, tpr_mlp, _ = roc_curve(y_test, pMLP[:,1])  
+    rocMLP.append((fpr_mlp, tpr_mlp))
 
     y_pred=(pMLP[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
@@ -234,13 +241,50 @@ plt.show()
 # Histogram for AUC
 plt.figure(figsize=(8,5))
 plt.hist(aucSVC, bins=10, alpha=0.5, label='SVM', color='b')
-plt.hist(aucKNN, bins=10, alpha=0.5, label='KNN', color='purple')
-plt.hist(aucMLP, bins=10, alpha=0.5, label='MLP', color='c')
+plt.hist(aucKNN, bins=10, alpha=0.5, label='KNN', color='r')
+plt.hist(aucMLP, bins=10, alpha=0.5, label='MLP', color='g')
 plt.xlabel("AUC", fontsize=12)
 plt.ylabel("Frequency", fontsize=12)
 plt.title("Histogram of AUC Across Trials")
 plt.legend()
 plt.show()
+
+# ROC CURVE --------------------------------------------
+# ROC CURVE (averaged across all trials)
+mean_fpr = np.linspace(0, 1, 100)
+
+def compute_mean_roc(roc_list, auc_list):
+    """Compute mean ROC by interpolating TPRs at common FPR points."""
+    tprs = []
+    for fpr, tpr in roc_list:
+        interp_tpr = np.interp(mean_fpr, fpr, tpr)
+        interp_tpr[0] = 0.0
+        tprs.append(interp_tpr)
+    mean_tpr = np.mean(tprs, axis=0)
+    mean_tpr[-1] = 1.0
+    mean_auc = np.mean(auc_list)
+    return mean_tpr, mean_auc
+
+# Compute averaged ROC for each model
+mean_tpr_svc, mean_auc_svc = compute_mean_roc(rocSVC, aucSVC)
+mean_tpr_knn, mean_auc_knn = compute_mean_roc(rocKNN, aucKNN)
+mean_tpr_mlp, mean_auc_mlp = compute_mean_roc(rocMLP, aucMLP)
+
+# Plot averaged ROC
+plt.figure(figsize=(8,6))
+plt.plot(mean_fpr, mean_tpr_svc, color='b', lw=2, label=f'SVM (AUC = {mean_auc_svc:.3f})')
+plt.plot(mean_fpr, mean_tpr_knn, color='r', lw=2, label=f'KNN (AUC = {mean_auc_knn:.3f})')
+plt.plot(mean_fpr, mean_tpr_mlp, color='g', lw=2, label=f'MLP (AUC = {mean_auc_mlp:.3f})')
+plt.plot([0,1], [0,1], 'k--', lw=1, label='Chance')
+
+plt.xlabel("False Positive Rate", fontsize=12)
+plt.ylabel("True Positive Rate", fontsize=12)
+plt.title("Average ROC Curve Across Trials", fontsize=14)
+plt.legend(loc='lower right')
+plt.grid(alpha=0.3)
+plt.show()
+# ----------------------------------------------------------------
+
 
 # Boxplot for Precision (macro) across trials
 plt.figure(figsize=(8,5))
@@ -253,8 +297,8 @@ plt.show()
 # Histogram for Precision (macro) across trials
 plt.figure(figsize=(8,5))
 plt.hist(precSVC['macro'], bins=10, alpha=0.6, label='SVM', color='b')
-plt.hist(precKNN['macro'], bins=10, alpha=0.6, label='KNN', color='purple')
-plt.hist(precMLP['macro'], bins=10, alpha=0.6, label='MLP', color='c')
+plt.hist(precKNN['macro'], bins=10, alpha=0.6, label='KNN', color='r')
+plt.hist(precMLP['macro'], bins=10, alpha=0.6, label='MLP', color='g')
 plt.xlabel("Precision (macro)", fontsize=12)
 plt.ylabel("Frequency", fontsize=12)
 plt.title("Histogram of Precision Across Trials")
