@@ -76,21 +76,21 @@ def plot_kde_comparison(dataset_names, dataset_dicts, Views, property_name, save
 def main():
     setup_plots_folder()
     
-    # Define datasets
+    # Define datasets. NOW WE ADDED ALL THE IMAGES TAKEN BY OUR COLLEAGES. 
     Real_DataDir = r"data"
-    Own_DataDir = r"data/Patentes"
-    Augmented_DataDir = r"data/Patentes"
+    WithProtocol_DataDir = r"data/All/with_Protocol"
+    WithoutProtocol_DataDir = r"data/All/without_Protocol"
     
     Views = ["Frontal", "Lateral"]
-    Views_A = ["FrontalAugmented", "LateralAugmented"]
     
     datasets = {
         "Real_Plates": (Real_DataDir, Views),
-        "New_Plates": (Own_DataDir, Views),
-        "NewAugmented_Plates": (Augmented_DataDir, Views_A),
+        "With_Protocol": (WithProtocol_DataDir, Views),
+        "Without_Protocol": (WithoutProtocol_DataDir, Views),
     }
     
     # Compute properties for all datasets
+    print("Computing properies of the complete dataset...")
     computed = {}
     for name, (dir_path, views) in datasets.items():
         plateArea, plateAngle, imageColor, imageIlluminance, imageSaturation = computeProperties(dir_path, views)
@@ -107,21 +107,16 @@ def main():
     # Properties to compare
     properties = ["plateAngle", "imageColor", "imageIlluminance", "imageSaturation"]
     
-    # Map views for plotting (Real and Own use ["Frontal","Lateral"], Augmented uses Views_A)
-    view_mapping = {
-        "Frontal": ["Frontal", "Frontal", "FrontalAugmented"],
-        "Lateral": ["Lateral", "Lateral", "LateralAugmented"]
-    }
-    
     # Plot KDE comparisons for each property and each view
+    print("Creating KDE plots...")
     for prop in properties:
-        for view in ["Frontal", "Lateral"]:
+        for view in Views:
             dataset_dicts = [computed[name][prop] for name in dataset_names]
-            mapped_views = [view_mapping[view][i] for i in range(len(dataset_dicts))]
-            # Re-map dicts to use the correct view names
+            
+            # Build remapped dicts per view
             remapped_dicts = []
-            for d, v in zip(dataset_dicts, mapped_views):
-                remapped_dicts.append({view: d.get(v, [])})
+            for d in dataset_dicts:
+                remapped_dicts.append({view: d.get(view, [])})
             
             plot_kde_comparison(dataset_names, remapped_dicts, [view], property_name=prop)
     

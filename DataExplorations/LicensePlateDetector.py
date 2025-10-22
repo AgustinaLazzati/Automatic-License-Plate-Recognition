@@ -20,7 +20,7 @@ import os
 import argparse
 import random
 
-SHOW = 1
+SHOW = 0
 minPlateW = 100
 minPlateH = 30
 

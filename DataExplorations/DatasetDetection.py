@@ -14,7 +14,10 @@ from ExploreParameters import detectPlates
 
 
 def normalize_view(view):
-    """Map augmented folder names to normal ones."""
+    """
+    Map augmented folder names to normal ones.
+    This was needed before to normalize the views do to the names of the folders 
+    """
     if "Frontal" in view:
         return "Frontal"
     if "Lateral" in view:
@@ -52,7 +55,8 @@ def analyze_datasets(datasets):
                 if img is None:
                     continue
                 plates, _ = detectPlates(img)
-         
+
+                
                 #IF NO PLATES DETECTED, WE WILL ZOOM IN OR ZOOM OUT THE IMAGE.
                 if len(plates) == 0:
                     # Zoom-in: crop center 90% and resize back 
@@ -62,7 +66,7 @@ def analyze_datasets(datasets):
                     cropped = img[crop_y1:crop_y2, crop_x1:crop_x2]
                     zoomed_in = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_CUBIC)
                     plates, _ = detectPlates(zoomed_in)
-
+                """
                 if len(plates) == 0:
                     # MORE AGRESSIVE Zoom-in: crop center 70% and resize back
                     h, w = img.shape[:2]
@@ -71,7 +75,7 @@ def analyze_datasets(datasets):
                     cropped = img[crop_y1:crop_y2, crop_x1:crop_x2]
                     zoomed_in = cv2.resize(cropped, (w, h), interpolation=cv2.INTER_CUBIC)
                     plates, _ = detectPlates(zoomed_in)
-
+                """
                 if len(plates) == 0:
                     # Zoom-out: add black padding and resize back
                     zoom_factor = 1.5
@@ -82,7 +86,7 @@ def analyze_datasets(datasets):
                     canvas[y_offset:y_offset+h, x_offset:x_offset+w] = img
                     zoomed_out = cv2.resize(canvas, (w, h), interpolation=cv2.INTER_CUBIC)
                     plates, _ = detectPlates(zoomed_out)
-                  
+        
                 
                 if len(plates) > 0:
                     detected += 1
@@ -121,16 +125,15 @@ def plot_bar(labels, values, title, ylabel, colors, percentages=None, y_limit=No
 
 def main():
     Real_DataDir = r"data"
-    Own_DataDir = r"data/Patentes"
-    Augmented_DataDir = r"data/Patentes"
+    WithProtocol_DataDir = r"data/All/with_Protocol"
+    WithoutProtocol_DataDir = r"data/All/without_Protocol"
 
     Views = ["Frontal", "Lateral"]
-    Views_A = ["FrontalAugmented", "LateralAugmented"]
 
     datasets = {
         "Real_Plates": (Real_DataDir, Views),
-        "New_plates": (Own_DataDir, Views),
-        "NewAugmented_plates": (Augmented_DataDir, Views_A),
+        "With_Protocol": (WithProtocol_DataDir, Views),
+        "Without_Protocol": (WithoutProtocol_DataDir, Views),
     }
 
     image_counts, detected_counts = analyze_datasets(datasets)
@@ -139,7 +142,7 @@ def main():
     colors = ["#1F4E79", "#4A90E2", "#87CEFA"]
 
     # ---------- Plot number of images ----------
-    for view in ["Frontal", "Lateral"]:
+    for view in Views:
         values = [image_counts[d].get(view, 0) for d in datasets_list]
         plot_bar(
             labels=datasets_list,
@@ -150,7 +153,7 @@ def main():
         )
 
     # ---------- Plot detection accuracy (%) ----------
-    for view in ["Frontal", "Lateral"]:
+    for view in Views:
         percentages = []
         for d in datasets_list:
             total = image_counts[d].get(view, 0)

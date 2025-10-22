@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import os
 import argparse
 
-SHOW = 1
+SHOW = 0
 
 # Plate size thresholds (smaller min size for distant plates)
 minPlateW = 60   # previously 100

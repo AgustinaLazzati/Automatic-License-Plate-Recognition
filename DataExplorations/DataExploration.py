@@ -20,7 +20,7 @@ from scipy.stats import gaussian_kde
 from matplotlib import pyplot as plt
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from DataExploration.LicensePlateDetector import detectPlates
+from LicensePlateDetector import detectPlates
 
 
 """
