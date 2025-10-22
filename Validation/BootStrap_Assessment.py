@@ -11,6 +11,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 import scipy
+from scipy import stats
 import pandas
 
 # Classifiers
@@ -28,24 +29,41 @@ import seaborn as sns
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
 
+# Function to calculate 95% CI
+def calculate_ci(data):
+    """Calculates the 95% Confidence Interval for the mean of the data."""
+    # Ensure there's enough data to calculate CI
+    if len(data) < 2:
+        return (np.mean(data) if data else 0, np.mean(data) if data else 0)
+    # degrees of freedom: df = N - 1
+    # loc = sample mean
+    # scale = standard error of the mean (SEM)
+    # Using the user-provided snippet structure
+    return stats.t.interval(
+        confidence=0.95, 
+        df=len(data) - 1, 
+        loc=np.mean(data), 
+        scale=stats.sem(data)
+    )
+
 
 #### STEP0. EXP-SET UP
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir='data/Results'
+ResultsDir='data/descriptors'
 # Load Font DataSets
-fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    
+fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'     
 f=open(fileout, 'rb')
 data=pickle.load(f)
 f.close()  
 alphabetFeat=data['alphabetFeat']
 alphabetLabels=data['alphabetLabels']
-   
+    
 
-fileout=os.path.join(ResultsDir,'DigitsDescriptors')+'.pkl'   
+fileout=os.path.join(ResultsDir,'DigitsDescriptors')+'.pkl'    
 f=open(fileout, 'rb')
 data=pickle.load(f)
-f.close()   
+f.close()    
 digitsFeat=data['digitsFeat']
 digitsLabels=data['digitsLabels']
 
@@ -63,11 +81,11 @@ X=np.concatenate((digits,chars))
 y=np.concatenate((digitsLab,charsLab))
 
 ### STEP1. TRAIN BINARY CLASSIFIERS [CHARACTER VS DIGITS]
-NTrial=30   #for exercise 1a) it was ask 1 trial. 
+NTrial=30
 
 averages = ['micro', 'macro', 'weighted']
 
-aucMLP, aucSVC, aucKNN = [], [], [] 
+aucMLP, aucSVC, aucKNN = [], [], []  
 accMLP, accSVC, accKNN = [], [], []
 rocSVC, rocKNN, rocMLP = [], [], []
 
@@ -111,7 +129,7 @@ for kTrial in np.arange(NTrial):
     # Precision & Recall for different averages
     y_pred=(pSVC[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
-                                       zero_division=0)
+                                             zero_division=0)
     
     # Store predictions for confusion matrix
     y_true_all['SVC'].extend(y_test)
@@ -151,7 +169,7 @@ for kTrial in np.arange(NTrial):
 
     y_pred=(pKNN[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
-                                       zero_division=0)
+                                             zero_division=0)
     
     # Store predictions for confusion matrix
     y_true_all['KNN'].extend(y_test)
@@ -190,7 +208,7 @@ for kTrial in np.arange(NTrial):
 
     y_pred=(pMLP[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
-                                       zero_division=0)
+                                             zero_division=0)
     
     # Store predictions for confusion matrix
     y_true_all['MLP'].extend(y_test)
@@ -215,6 +233,31 @@ for kTrial in np.arange(NTrial):
         recMLP[avg_method].append(rec_val)
 
 
+# T-test for AUC: SVC vs KNN
+t_stat_svc_knn_auc, p_svc_knn_auc = stats.ttest_ind(aucSVC, aucKNN)
+print(f"\nAUC t-test (SVM vs KNN): t={t_stat_svc_knn_auc:.5f}, p={p_svc_knn_auc:.5f}")
+
+# T-test for AUC: SVC vs MLP
+t_stat_svc_mlp_auc, p_svc_mlp_auc = stats.ttest_ind(aucSVC, aucMLP)
+print(f"AUC T-test (SVM vs MLP): t={t_stat_svc_mlp_auc:.5f}, p={p_svc_mlp_auc:.5f}")
+
+# T-test for AUC: KNN vs MLP
+t_stat_knn_mlp_auc, p_knn_mlp_auc = stats.ttest_ind(aucKNN, aucMLP)
+print(f"AUC T-test (KNN vs MLP): t={t_stat_knn_mlp_auc:.5f}, p={p_knn_mlp_auc:.5f}")
+
+# T-test for Accuracy: SVC vs KNN
+t_stat_svc_knn_acc, p_svc_knn_acc = stats.ttest_ind(accSVC, accKNN)
+print(f"\nAccuracy T-test (SVM vs KNN): t={t_stat_svc_knn_acc:.5f}, p={p_svc_knn_acc:.5f}")
+
+# T-test for Accuracy: SVC vs MLP
+t_stat_svc_mlp_acc, p_svc_mlp_acc = stats.ttest_ind(accSVC, accMLP)
+print(f"Accuracy T-test (SVM vs MLP): t={t_stat_svc_mlp_acc:.5f}, p={p_svc_mlp_acc:.5f}")
+
+# T-test for Accuracy: KNN vs MLP
+t_stat_knn_mlp_acc, p_knn_mlp_acc = stats.ttest_ind(accKNN, accMLP)
+print(f"Accuracy T-test (KNN vs MLP): t={t_stat_knn_mlp_acc:.5f}, p={p_knn_mlp_acc:.5f}")
+
+
 #### STEP2. ANALYZE RESULTS
 # ------------------------------------------------------
 # In this step we will compute the ROC, AUC and CONFUSION MATRIX
@@ -232,17 +275,48 @@ precMLP = np.stack(precMLP)
 
 #### Plots accoss trials (random splits)
 plt.figure()
-plt.plot(np.arange(NTrial),aucSVC,marker='o',c='b',markersize=10)
-plt.plot(np.arange(NTrial),aucKNN,marker='o',c='r',markersize=10)
-plt.plot(np.arange(NTrial),aucMLP,marker='o',c='g',markersize=10)
+plt.plot(np.arange(NTrial),aucSVC,marker='o',c='b',markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial),aucKNN,marker='o',c='r',markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial),aucMLP,marker='o',c='g',markersize=2, alpha=0.5)
 plt.legend(['SVM','KNN','MLP'])
-plt.xticks(np.arange(NTrial), fontsize=10)
+plt.xticks(np.arange(0, NTrial + 1, NTrial/10), fontsize=10) # Adjust x-ticks for 100 trials
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("AUC", fontsize=15)
 # Showing
 #plt.savefig(os.path.join(ResultsDir, "auc_plot.png"))
 plt.show()
 
+
+# Calculate CIs
+ci_aucSVC = calculate_ci(aucSVC)
+ci_aucKNN = calculate_ci(aucKNN)
+ci_aucMLP = calculate_ci(aucMLP)
+
+ci_accSVC = calculate_ci(accSVC)
+ci_accKNN = calculate_ci(accKNN)
+ci_accMLP = calculate_ci(accMLP)
+
+# --- NEW: Calculate CI for Macro Precision ---
+ci_precSVC = calculate_ci(precSVC['macro'])
+ci_precKNN = calculate_ci(precKNN['macro'])
+ci_precMLP = calculate_ci(precMLP['macro'])
+
+# --- CI Visualization Data Setup ---
+models = ['SVM', 'KNN', 'MLP']
+
+# AUC Data
+mean_auc = [np.mean(aucSVC), np.mean(aucKNN), np.mean(aucMLP)]
+ci_auc = [ci_aucSVC, ci_aucKNN, ci_aucMLP]
+# Margin of Error (Distance from Mean to Lower Bound)
+err_auc = [mean_auc[i] - ci_auc[i][0] for i in range(len(models))]
+
+# Accuracy Data
+mean_acc = [np.mean(accSVC), np.mean(accKNN), np.mean(accMLP)]
+ci_acc = [ci_accSVC, ci_accKNN, ci_accMLP]
+# Margin of Error (Distance from Mean to Lower Bound)
+err_acc = [mean_acc[i] - ci_acc[i][0] for i in range(len(models))]
+
+# --- CI PLOTS ---
 
 #EXERCISE 2A) ------------------
 # Boxplot for AUC
@@ -257,10 +331,50 @@ plt.figure(figsize=(8,5))
 plt.hist(aucSVC, bins=10, alpha=0.5, label='SVM', color='b')
 plt.hist(aucKNN, bins=10, alpha=0.5, label='KNN', color='r')
 plt.hist(aucMLP, bins=10, alpha=0.5, label='MLP', color='g')
+# Changed to density=True for Normal PDF overlay
+plt.hist(aucSVC, bins=10, alpha=0.5, label='SVM', color='b', density=True)
+plt.hist(aucKNN, bins=10, alpha=0.5, label='KNN', color='purple', density=True)
+plt.hist(aucMLP, bins=10, alpha=0.5, label='MLP', color='c', density=True)
+
+ax = plt.gca()
+xmin, xmax = ax.get_xlim()
+x = np.linspace(xmin, xmax, 100)
+
+# Overlay Normal PDF for SVM (Blue)
+mu, std = np.mean(aucSVC), np.std(aucSVC)
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'b--', linewidth=2, label=f'SVM Normal Fit')
+
+# Overlay Normal PDF for KNN (Red/Purple)
+mu, std = np.mean(aucKNN), np.std(aucKNN)
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'r--', linewidth=2, label=f'KNN Normal Fit') # Using red for consistency
+
+# Overlay Normal PDF for MLP (Green/Cyan)
+mu, std = np.mean(aucMLP), np.std(aucMLP)
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'g--', linewidth=2, label=f'MLP Normal Fit')
+
+# Add Mean and CI lines for AUC
+# SVM (Blue)
+ax.axvline(np.mean(aucSVC), color='b', linestyle='-', linewidth=1.5, label='SVM Mean')
+ax.axvline(ci_aucSVC[0], color='b', linestyle=':', linewidth=1)
+ax.axvline(ci_aucSVC[1], color='b', linestyle=':', linewidth=1)
+
+# KNN (Red)
+ax.axvline(np.mean(aucKNN), color='r', linestyle='-', linewidth=1.5, label='KNN Mean')
+ax.axvline(ci_aucKNN[0], color='r', linestyle=':', linewidth=1)
+ax.axvline(ci_aucKNN[1], color='r', linestyle=':', linewidth=1)
+
+# MLP (Green)
+ax.axvline(np.mean(aucMLP), color='g', linestyle='-', linewidth=1.5, label='MLP Mean')
+ax.axvline(ci_aucMLP[0], color='g', linestyle=':', linewidth=1)
+ax.axvline(ci_aucMLP[1], color='g', linestyle=':', linewidth=1)
+
+plt.legend(loc='upper left', fontsize=8) # Lower fontsize to fit more labels
 plt.xlabel("AUC", fontsize=12)
-plt.ylabel("Frequency", fontsize=12)
-plt.title("Histogram of AUC Across Trials")
-plt.legend()
+plt.ylabel("Probability Density", fontsize=12)
+plt.title("Probability Density of AUC Across Trials with Fitted Normal Distribution and 95% CI")
 plt.show()
 
 # Print summary
@@ -329,7 +443,7 @@ plt.show()
 # Boxplot for Precision (macro) across trials
 plt.figure(figsize=(8,5))
 box = plt.boxplot([precSVC['macro'], precKNN['macro'], precMLP['macro']], 
-                  tick_labels=['SVM','KNN','MLP'])
+             tick_labels=['SVM','KNN','MLP'])
 plt.ylabel("Precision (macro)", fontsize=12)
 plt.title("Boxplot of Precision Across Trials")
 plt.show()
@@ -339,10 +453,51 @@ plt.figure(figsize=(8,5))
 plt.hist(precSVC['macro'], bins=10, alpha=0.6, label='SVM', color='b')
 plt.hist(precKNN['macro'], bins=10, alpha=0.6, label='KNN', color='r')
 plt.hist(precMLP['macro'], bins=10, alpha=0.6, label='MLP', color='g')
+# Changed to density=True for Normal PDF overlay
+plt.hist(precSVC['macro'], bins=10, alpha=0.6, label='SVM', color='b', density=True)
+plt.hist(precKNN['macro'], bins=10, alpha=0.6, label='KNN', color='purple', density=True)
+plt.hist(precMLP['macro'], bins=10, alpha=0.6, label='MLP', color='c', density=True)
+
+ax = plt.gca()
+xmin, xmax = ax.get_xlim()
+x = np.linspace(xmin, xmax, 100)
+
+# Overlay Normal PDF for SVM (Blue)
+mu, std = np.mean(precSVC['macro']), np.std(precSVC['macro'])
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'b--', linewidth=2, label=f'SVM Normal Fit')
+
+# Overlay Normal PDF for KNN (Red/Purple)
+mu, std = np.mean(precKNN['macro']), np.std(precKNN['macro'])
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'r--', linewidth=2, label=f'KNN Normal Fit')
+
+# Overlay Normal PDF for MLP (Green/Cyan)
+mu, std = np.mean(precMLP['macro']), np.std(precMLP['macro'])
+p = stats.norm.pdf(x, mu, std)
+ax.plot(x, p, 'g--', linewidth=2, label=f'MLP Normal Fit')
+
+# Add Mean and CI lines for Macro Precision
+# SVM (Blue)
+ax.axvline(np.mean(precSVC['macro']), color='b', linestyle='-', linewidth=1.5, label='SVM Mean')
+ax.axvline(ci_precSVC[0], color='b', linestyle=':', linewidth=1)
+ax.axvline(ci_precSVC[1], color='b', linestyle=':', linewidth=1)
+
+# KNN (Red)
+ax.axvline(np.mean(precKNN['macro']), color='r', linestyle='-', linewidth=1.5, label='KNN Mean')
+ax.axvline(ci_precKNN[0], color='r', linestyle=':', linewidth=1)
+ax.axvline(ci_precKNN[1], color='r', linestyle=':', linewidth=1)
+
+# MLP (Green)
+ax.axvline(np.mean(precMLP['macro']), color='g', linestyle='-', linewidth=1.5, label='MLP Mean')
+ax.axvline(ci_precMLP[0], color='g', linestyle=':', linewidth=1)
+ax.axvline(ci_precMLP[1], color='g', linestyle=':', linewidth=1)
+
+plt.legend(loc='upper left', fontsize=8)
+>>>>>>> afa116e (some pipe)
 plt.xlabel("Precision (macro)", fontsize=12)
-plt.ylabel("Frequency", fontsize=12)
-plt.title("Histogram of Precision Across Trials")
-plt.legend()
+plt.ylabel("Probability Density", fontsize=12)
+plt.title("Probability Density of Precision (macro) Across Trials with Fitted Normal Distribution and 95% CI")
 plt.show()
 
 # Boxplot for Recall (macro) across trials
@@ -367,38 +522,64 @@ plt.show()
 #EXERCISE 1D)  MICRO MACRO -----------------
 # Accuracy
 plt.figure()
-plt.plot(np.arange(NTrial), accSVC, marker='o', c='b', markersize=10)
-plt.plot(np.arange(NTrial), accKNN, marker='o', c='r', markersize=10)
-plt.plot(np.arange(NTrial), accMLP, marker='o', c='g', markersize=10)
+plt.plot(np.arange(NTrial), accSVC, marker='o', c='b', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), accKNN, marker='o', c='r', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), accMLP, marker='o', c='g', markersize=2, alpha=0.5)
 plt.legend(['SVM','KNN','MLP'])
-plt.xticks(np.arange(NTrial), fontsize=10)
+plt.xticks(np.arange(0, NTrial + 1, NTrial/10), fontsize=10)
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("Accuracy", fontsize=15)
 plt.show()
 
 # Recall (macro average)
 plt.figure()
-plt.plot(np.arange(NTrial), recSVC['macro'], marker='o', c='b', markersize=10)
-plt.plot(np.arange(NTrial), recKNN['macro'], marker='o', c='r', markersize=10)
-plt.plot(np.arange(NTrial), recMLP['macro'], marker='o', c='g', markersize=10)
+plt.plot(np.arange(NTrial), recSVC['macro'], marker='o', c='b', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), recKNN['macro'], marker='o', c='r', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), recMLP['macro'], marker='o', c='g', markersize=2, alpha=0.5)
 plt.legend(['SVM','KNN','MLP'])
-plt.xticks(np.arange(NTrial), fontsize=10)
+plt.xticks(np.arange(0, NTrial + 1, NTrial/10), fontsize=10)
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("Recall (macro)", fontsize=15)
 plt.show()
 
 # Precision (macro average)
 plt.figure()
-plt.plot(np.arange(NTrial), precSVC['macro'], marker='o', c='b', markersize=10)
-plt.plot(np.arange(NTrial), precKNN['macro'], marker='o', c='r', markersize=10)
-plt.plot(np.arange(NTrial), precMLP['macro'], marker='o', c='g', markersize=10)
+plt.plot(np.arange(NTrial), precSVC['macro'], marker='o', c='b', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), precKNN['macro'], marker='o', c='r', markersize=2, alpha=0.5)
+plt.plot(np.arange(NTrial), precMLP['macro'], marker='o', c='g', markersize=2, alpha=0.5)
 plt.legend(['SVM','KNN','MLP'])
-plt.xticks(np.arange(NTrial), fontsize=10)
+plt.xticks(np.arange(0, NTrial + 1, NTrial/10), fontsize=10)
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("Precision (macro)", fontsize=15)
 plt.show()
-#---------------------------
 
+=======
+# Print summary
+print("Average AUCs:")
+print("SVM:", np.mean(aucSVC).round(4))
+print("KNN:", np.mean(aucKNN).round(4))
+print("MLP:", np.mean(aucMLP).round(4))
+
+# Print Summary CIs
+print("\n" + "="*65)
+print(" 95% CONFIDENCE INTERVALS (CI) FOR MEAN AUC, ACCURACY, AND MACRO PRECISION")
+print("="*65)
+
+print("\n--- AUC Confidence Intervals ---")
+print(f"SVM AUC CI (95%): ({ci_aucSVC[0]:.4f}, {ci_aucSVC[1]:.4f}) | Mean: {np.mean(aucSVC):.4f}")
+print(f"KNN AUC CI (95%): ({ci_aucKNN[0]:.4f}, {ci_aucKNN[1]:.4f}) | Mean: {np.mean(aucKNN):.4f}")
+print(f"MLP AUC CI (95%): ({ci_aucMLP[0]:.4f}, {ci_aucMLP[1]:.4f}) | Mean: {np.mean(aucMLP):.4f}")
+
+print("\n--- Accuracy Confidence Intervals ---")
+print(f"SVM Accuracy CI (95%): ({ci_accSVC[0]:.4f}, {ci_accSVC[1]:.4f}) | Mean: {np.mean(accSVC):.4f}")
+print(f"KNN Accuracy CI (95%): ({ci_accKNN[0]:.4f}, {ci_accKNN[1]:.4f}) | Mean: {np.mean(accKNN):.4f}")
+print(f"MLP Accuracy CI (95%): ({ci_accMLP[0]:.4f}, {ci_accMLP[1]:.4f}) | Mean: {np.mean(accMLP):.4f}")
+
+# --- NEW: Print CI for Macro Precision ---
+print("\n--- Precision (macro) Confidence Intervals ---")
+print(f"SVM Precision CI (95%): ({ci_precSVC[0]:.4f}, {ci_precSVC[1]:.4f}) | Mean: {np.mean(precSVC['macro']):.4f}")
+print(f"KNN Precision CI (95%): ({ci_precKNN[0]:.4f}, {ci_precKNN[1]:.4f}) | Mean: {np.mean(precKNN['macro']):.4f}")
+print(f"MLP Precision CI (95%): ({ci_precMLP[0]:.4f}, {ci_precMLP[1]:.4f}) | Mean: {np.mean(precMLP['macro']):.4f}")
 
 # Comparing Precision, Recall, and Accuracy  for exercise 1A)
 #### STEP3. SUMMARY AND VISUALIZATION ####
@@ -464,6 +645,7 @@ plt.legend()
 plt.title("Recall Comparison Across Models (Per-Class)")
 plt.grid(alpha=0.3)
 plt.tight_layout()
+<<<<<<< HEAD
 plt.show()
 
 # Per-Class RECALL Comparison BOXPLOT
@@ -488,3 +670,5 @@ plt.title("Per-Class Recall Distribution Across Models", fontsize=14)
 plt.tight_layout()
 plt.show()
 """
+#plt.savefig(os.path.join(ResultsDir, "precision_comparison_per_class.png"))
+plt.show()
