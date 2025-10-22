@@ -12,7 +12,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, roc_curve
+from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score
 
 
 #### STEP0. EXP-SET UP
@@ -53,9 +53,10 @@ NTrial = 30  # number of random splits/trials
 # Dictionaries to hold results
 acc_all = {'SVC': [], 'KNN': [], 'MLP': []}
 conf_all = {'SVC': [], 'KNN': [], 'MLP': []}
+aucMLP=[]
+aucSVC=[]
+aucKNN=[]
 
-aucMLP, aucSVC, aucKNN = [], [], [] 
-roc_all = {'SVC': [], 'KNN': [], 'MLP': []}  # store fpr/tpr for aggregation
 
 for kTrial in np.arange(NTrial):
     # Random Train-test split
@@ -74,13 +75,6 @@ for kTrial in np.arange(NTrial):
     
     auc = roc_auc_score(y_test_d, y_prob_svc, multi_class='ovr')
     aucSVC.append(auc)
-    # store per-class ROC
-    fpr = dict()
-    tpr = dict()
-    for i in range(10):
-        fpr[i], tpr[i], _ = roc_curve((y_test_d==i).astype(int), y_prob_svc[:,i])
-    roc_all['SVC'].append((fpr, tpr))
-
 
     ##### KNN
     ModelKNN = KNeighborsClassifier(n_neighbors=10)
@@ -94,11 +88,6 @@ for kTrial in np.arange(NTrial):
     auc = roc_auc_score(y_test_d, y_prob_knn, multi_class='ovr')
     aucKNN.append(auc)
 
-    fpr = dict(); tpr = dict()
-    for i in range(10):
-        fpr[i], tpr[i], _ = roc_curve((y_test_d==i).astype(int), y_prob_knn[:,i])
-    roc_all['KNN'].append((fpr, tpr))
-
     ##### MLP
     ModelMLP = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15, 20), max_iter=100000, random_state=1)
     ModelMLP = CalibratedClassifierCV(ModelMLP, n_jobs=-1)
@@ -110,12 +99,6 @@ for kTrial in np.arange(NTrial):
     
     auc = roc_auc_score(y_test_d, y_prob_mlp, multi_class='ovr')
     aucMLP.append(auc)
-
-    fpr = dict(); tpr = dict()
-    for i in range(10):
-        fpr[i], tpr[i], _ = roc_curve((y_test_d==i).astype(int), y_prob_mlp[:,i])
-    roc_all['MLP'].append((fpr, tpr))
-
         
 
 
@@ -160,35 +143,4 @@ plt.legend(['SVM','KNN','MLP'])
 plt.xticks(np.arange(NTrial), fontsize=10)
 plt.xlabel("Trial", fontsize=15)
 plt.ylabel("AUC", fontsize=15)
-plt.show()
-
-
-#### AGGREGATED ROC CURVE
-# Average TPR over trials for each class and each model
-mean_fpr = np.linspace(0,1,100)
-
-def compute_mean_roc(roc_list):
-    tprs = []
-    for fpr_dict, tpr_dict in roc_list:
-        # average across classes
-        tpr_avg = np.zeros_like(mean_fpr)
-        for i in range(10):
-            tpr_avg += np.interp(mean_fpr, fpr_dict[i], tpr_dict[i])
-        tpr_avg /= 10  # average across classes
-        tprs.append(tpr_avg)
-    return np.mean(tprs, axis=0)
-
-mean_tpr_svc = compute_mean_roc(roc_all['SVC'])
-mean_tpr_knn = compute_mean_roc(roc_all['KNN'])
-mean_tpr_mlp = compute_mean_roc(roc_all['MLP'])
-
-plt.figure(figsize=(8,6))
-plt.plot(mean_fpr, mean_tpr_svc, c='b', lw=2, label=f'SVC')
-plt.plot(mean_fpr, mean_tpr_knn, c='r', lw=2, label=f'KNN')
-plt.plot(mean_fpr, mean_tpr_mlp, c='g', lw=2, label=f'MLP')
-plt.plot([0,1],[0,1],'k--', lw=1)
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("Aggregated ROC Curve Across Trials (Digits)")
-plt.legend()
 plt.show()
