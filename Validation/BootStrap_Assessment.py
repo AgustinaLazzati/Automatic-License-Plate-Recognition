@@ -24,6 +24,7 @@ from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score,  roc_curve
 from sklearn.metrics import precision_recall_fscore_support,precision_score, recall_score, f1_score, accuracy_score, classification_report
+import seaborn as sns
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
 
@@ -305,6 +306,26 @@ plt.title("Histogram of Precision Across Trials")
 plt.legend()
 plt.show()
 
+# Boxplot for Recall (macro) across trials
+plt.figure(figsize=(8,5))
+box = plt.boxplot([recSVC['macro'], recKNN['macro'], recMLP['macro']], 
+                  tick_labels=['SVM','KNN','MLP'])
+plt.ylabel("Precision (macro)", fontsize=12)
+plt.title("Boxplot of Recall Across Trials")
+plt.show()
+
+# Histogram for Precision (macro) across trials
+plt.figure(figsize=(8,5))
+plt.hist(recSVC['macro'], bins=10, alpha=0.6, label='SVM', color='b')
+plt.hist(recKNN['macro'], bins=10, alpha=0.6, label='KNN', color='r')
+plt.hist(recMLP['macro'], bins=10, alpha=0.6, label='MLP', color='g')
+plt.xlabel("Recall (macro)", fontsize=12)
+plt.ylabel("Frequency", fontsize=12)
+plt.title("Histogram of Recall Across Trials")
+plt.legend()
+plt.show()
+
+
 
 #EXERCISE 1D)  -----------------
 # Accuracy
@@ -382,34 +403,56 @@ for avg_method in scores:
     print(f"\n>> {avg_method.upper()} average:")
     print(subset[['Model', 'Precision', 'Recall', 'Accuracy']].round(3).to_string(index=False))
 
-# Plot Precision comparison (excluding per-class)
+# Plot Recall comparison (excluding per-class)
 plt.figure(figsize=(10,5))
 for i, avg_method in enumerate(['micro', 'macro', 'weighted', 'fscore']):
     subset = results_df[results_df['Average'] == avg_method]
-    plt.bar(np.arange(len(subset)) + i*0.2, subset['Precision'], width=0.2, label=f'Precision ({avg_method})')
+    plt.bar(np.arange(len(subset)) + i*0.2, subset['Recall'], width=0.2, label=f'Recall ({avg_method})')
 
 plt.xticks(np.arange(len(subset)) + 0.3, subset['Model'].unique())
-plt.ylabel("Precision", fontsize=12)
+plt.ylabel("Recall", fontsize=12)
 plt.ylim(0, 1)
 plt.legend()
-plt.title("Precision Comparison Across Models and Averages")
+plt.title("Recall Comparison Across Models and Averages")
 plt.grid(alpha=0.3)
 plt.tight_layout()
-#plt.savefig(os.path.join(ResultsDir, "precision_comparison_summary.png"))
+#plt.savefig(os.path.join(ResultsDir, "Recall_comparison_summary.png"))
 plt.show()
 
-# Optional: Plot per-class Precision distinction separately
+# Plot per-class Recall distinction separately
 plt.figure(figsize=(8,4))
 for i, cls in enumerate(['class0', 'class1']):
     subset = results_df[results_df['Average'] == cls]
-    plt.bar(np.arange(len(subset)) + i*0.3, subset['Precision'], width=0.3, label=f'Precision ({cls})')
+    plt.bar(np.arange(len(subset)) + i*0.3, subset['Recall'], width=0.3, label=f'Recall ({cls})')
 
 plt.xticks(np.arange(len(subset)) + 0.15, subset['Model'].unique())
-plt.ylabel("Precision", fontsize=12)
+plt.ylabel("Recall", fontsize=12)
 plt.ylim(0, 1)
 plt.legend()
-plt.title("Precision Comparison Across Models (Per-Class)")
+plt.title("Recall Comparison Across Models (Per-Class)")
 plt.grid(alpha=0.3)
 plt.tight_layout()
-#plt.savefig(os.path.join(ResultsDir, "precision_comparison_per_class.png"))
+#plt.savefig(os.path.join(ResultsDir, "Recall_comparison_per_class.png"))
+plt.show()
+
+# Per-Class Recall Comparison BOXPLOT
+plt.figure(figsize=(10, 6))
+
+recall_data = [
+    recSVC['class0'], recSVC['class1'],
+    recKNN['class0'], recKNN['class1'],
+    recMLP['class0'], recMLP['class1']
+]
+
+# Define labels (grouped visually by model)
+labels = [
+    'SVM\nClass 0', 'SVM\nClass 1',
+    'KNN\nClass 0', 'KNN\nClass 1',
+    'MLP\nClass 0', 'MLP\nClass 1'
+]
+
+box = plt.boxplot(recall_data, tick_labels=labels, patch_artist=False, widths=0.6)
+plt.ylabel("Recall", fontsize=12)
+plt.title("Per-Class Recall Distribution Across Models", fontsize=14)
+plt.tight_layout()
 plt.show()
