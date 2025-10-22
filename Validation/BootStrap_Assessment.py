@@ -22,7 +22,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score,  roc_curve
+from sklearn.metrics import roc_auc_score,  roc_curve, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import precision_recall_fscore_support,precision_score, recall_score, f1_score, accuracy_score, classification_report
 import seaborn as sns
 
@@ -80,16 +80,14 @@ recKNN  = {avg: [] for avg in scores}
 precMLP = {avg: [] for avg in scores}
 recMLP  = {avg: [] for avg in scores}
 
-"""
-# Add a 'mean' key to store the average across classes for each trial
-precSVC['mean'] = []
-precKNN['mean'] = []
-precMLP['mean'] = []
-recSVC['mean'] = []
-recKNN['mean'] = []
-recMLP['mean'] = []
-"""
+# Store all predictions and true labels for confusion matrices
+y_true_all = {'SVC': [], 'KNN': [], 'MLP': []}
+y_pred_all = {'SVC': [], 'KNN': [], 'MLP': []}
 
+
+#-----------------------------------------------------------------------------
+# We will train each model for all the different trials 
+#----------------------------------------------------------------------------
 for kTrial in np.arange(NTrial):
     # Random Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -108,12 +106,16 @@ for kTrial in np.arange(NTrial):
     auc=roc_auc_score(y_test, pSVC[:,1])
     aucSVC.append(auc)
     fpr_svc, tpr_svc, _ = roc_curve(y_test, pSVC[:,1])  
-    rocSVC.append((fpr_svc, tpr_svc))    
+    rocSVC.append((fpr_svc, tpr_svc))  
 
     # Precision & Recall for different averages
     y_pred=(pSVC[:,1]>=0.5).astype(int)
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
+    
+    # Store predictions for confusion matrix
+    y_true_all['SVC'].extend(y_test)
+    y_pred_all['SVC'].extend(y_pred)  
     
     accSVC.append(accuracy_score(y_test, y_pred))
     precSVC['fscore'].append(np.mean(prec))
@@ -151,6 +153,10 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     
+    # Store predictions for confusion matrix
+    y_true_all['KNN'].extend(y_test)
+    y_pred_all['KNN'].extend(y_pred)
+
     accKNN.append(accuracy_score(y_test, y_pred))
     precKNN['fscore'].append(np.mean(prec))
     recKNN['fscore'].append(np.mean(rec))
@@ -186,6 +192,10 @@ for kTrial in np.arange(NTrial):
     prec,rec,_,_ = precision_recall_fscore_support(y_test, y_pred,
                                        zero_division=0)
     
+    # Store predictions for confusion matrix
+    y_true_all['MLP'].extend(y_test)
+    y_pred_all['MLP'].extend(y_pred)
+
     accMLP.append(accuracy_score(y_test, y_pred))
     precMLP['fscore'].append(np.mean(prec))
     recMLP['fscore'].append(np.mean(rec))
@@ -206,6 +216,9 @@ for kTrial in np.arange(NTrial):
 
 
 #### STEP2. ANALYZE RESULTS
+# ------------------------------------------------------
+# In this step we will compute the ROC, AUC and CONFUSION MATRIX
+# ------------------------------------------------------
 """
 ## Visual Exploration
 recSVC=np.stack(recSVC)
@@ -250,6 +263,12 @@ plt.title("Histogram of AUC Across Trials")
 plt.legend()
 plt.show()
 
+# Print summary
+print("Average AUCs:")
+print("SVM:", np.mean(aucSVC).round(4))
+print("KNN:", np.mean(aucKNN).round(4))
+print("MLP:", np.mean(aucMLP).round(4))
+
 # ROC CURVE --------------------------------------------
 # ROC CURVE (averaged across all trials)
 mean_fpr = np.linspace(0, 1, 100)
@@ -284,9 +303,29 @@ plt.title("Average ROC Curve Across Trials", fontsize=14)
 plt.legend(loc='lower right')
 plt.grid(alpha=0.3)
 plt.show()
-# ----------------------------------------------------------------
+
+# CONFUSION MATRIX ---------------------------------------
+# Merged across all trials
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+for ax, model_name in zip(axes, ['SVC', 'KNN', 'MLP']):
+    cm = confusion_matrix(y_true_all[model_name], y_pred_all[model_name])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Digit (0)', 'Char (1)'])
+    disp.plot(ax=ax, colorbar=False, cmap='Blues')
+    ax.set_title(f'{model_name} - Combined Confusion Matrix')
+    ax.grid(False)
+
+plt.suptitle(f"Confusion Matrices Aggregated Across {NTrial} Trials", fontsize=14, y=0.96)
+plt.tight_layout()
+plt.show()
 
 
+
+#### STEP3. SUMMARY AND VISUALIZATION ####
+# --------------------------------------------------------
+# in this step, we will compute BOX PLOTS, BAR PLOTS, and HISTOGRAMS. 
+# --------------------------------------------------------
+"""
+# BOX PLOTS + HISTOGRAMS OF PRECISION AND RECALL ---------
 # Boxplot for Precision (macro) across trials
 plt.figure(figsize=(8,5))
 box = plt.boxplot([precSVC['macro'], precKNN['macro'], precMLP['macro']], 
@@ -325,9 +364,7 @@ plt.title("Histogram of Recall Across Trials")
 plt.legend()
 plt.show()
 
-
-
-#EXERCISE 1D)  -----------------
+#EXERCISE 1D)  MICRO MACRO -----------------
 # Accuracy
 plt.figure()
 plt.plot(np.arange(NTrial), accSVC, marker='o', c='b', markersize=10)
@@ -361,12 +398,6 @@ plt.xlabel("Trial", fontsize=15)
 plt.ylabel("Precision (macro)", fontsize=15)
 plt.show()
 #---------------------------
-
-# Print summary
-print("Average AUCs:")
-print("SVM:", np.mean(aucSVC).round(4))
-print("KNN:", np.mean(aucKNN).round(4))
-print("MLP:", np.mean(aucMLP).round(4))
 
 
 # Comparing Precision, Recall, and Accuracy  for exercise 1A)
@@ -416,10 +447,11 @@ plt.legend()
 plt.title("Recall Comparison Across Models and Averages")
 plt.grid(alpha=0.3)
 plt.tight_layout()
-#plt.savefig(os.path.join(ResultsDir, "Recall_comparison_summary.png"))
 plt.show()
 
-# Plot per-class Recall distinction separately
+
+# PER-CLASS ANALYSIS ---------------------------------------
+# per-class RECALL distinction separately BARPLOT
 plt.figure(figsize=(8,4))
 for i, cls in enumerate(['class0', 'class1']):
     subset = results_df[results_df['Average'] == cls]
@@ -432,10 +464,9 @@ plt.legend()
 plt.title("Recall Comparison Across Models (Per-Class)")
 plt.grid(alpha=0.3)
 plt.tight_layout()
-#plt.savefig(os.path.join(ResultsDir, "Recall_comparison_per_class.png"))
 plt.show()
 
-# Per-Class Recall Comparison BOXPLOT
+# Per-Class RECALL Comparison BOXPLOT
 plt.figure(figsize=(10, 6))
 
 recall_data = [
@@ -456,3 +487,4 @@ plt.ylabel("Recall", fontsize=12)
 plt.title("Per-Class Recall Distribution Across Models", fontsize=14)
 plt.tight_layout()
 plt.show()
+"""
