@@ -202,9 +202,6 @@ for idx, img_name in enumerate(ImID):
     plt.tight_layout()
     plt.show()
 
-
-
-
     # stop after a few images
     if idx >= 1:
         break
