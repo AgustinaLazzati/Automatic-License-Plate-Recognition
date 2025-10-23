@@ -22,14 +22,14 @@ from sklearn.neural_network import MLPClassifier
 
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
-from descriptors.intensity import FeatureIntensity
-from descriptors.lbp import FeatureLBP
-from descriptors.hog import FeatureHOG
+from Descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
+from Descriptors.intensity import FeatureIntensity
+from Descriptors.lbp import FeatureLBP
+from Descriptors.hog import FeatureHOG
 
 #### EXP-SET UP
-# DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'/home/tomiock/uni2025/license/example_fonts'
+# DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH) 
+DataDir=r'/example_fonts'    #r'/home/tomiock/uni2025/license/example_fonts'
 ResultsDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Results'
 # Load Font DataSets
 fileout=os.path.join(DataDir,'alphabetIms')+'.pkl'    
