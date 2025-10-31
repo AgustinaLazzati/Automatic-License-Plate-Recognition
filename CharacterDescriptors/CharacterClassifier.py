@@ -21,7 +21,7 @@ from Descriptors.hog import FeatureHOG
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'/home/tomiock/uni2025/license/example_fonts'
+DataDir='example_fonts'
 
 # Load Font DataSets
 fileout=os.path.join(DataDir,'alphabetIms')+'.pkl'

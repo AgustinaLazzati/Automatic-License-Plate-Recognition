@@ -22,15 +22,15 @@ from sklearn.neural_network import MLPClassifier
 
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
-from descriptors.intensity import FeatureIntensity
-from descriptors.lbp import FeatureLBP
-from descriptors.hog import FeatureHOG
+from Descriptors.blockbinarypixelsum import FeatureBlockBinaryPixelSum
+from Descriptors.intensity import FeatureIntensity
+from Descriptors.lbp import FeatureLBP
+from Descriptors.hog import FeatureHOG
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir = r"/home/tomiock/uni2025/license/example_fonts"
-ResultsDir = r"D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Results"
+DataDir = "example_fonts"
+ResultsDir = "ResultsDescr"
 # Load Font DataSets
 fileout = os.path.join(DataDir, "alphabetIms") + ".pkl"
 f = open(fileout, "rb")
@@ -91,7 +91,30 @@ for targetFeat in digitsFeat.keys():
     plt.legend(np.unique(digitsLabels))
     plt.title(targetFeat)
     plt.show()
-#  plt.savefig(os.path.join(ResultsDir,targetFeat+'DigitsFeatSpace.png'))
+    #plt.savefig(os.path.join(ResultsDir,targetFeat+'DigitsFeatSpace.png'))
+
+####JUST FOR WORKFLOW.....
+##########################################
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+
+# Convert to array
+feat_matrix = np.stack(digitsFeat["BLCK_AVG"])  # shape: (num_samples, num_features)
+
+# Normalize each feature between 0 and 1
+scaler = MinMaxScaler()
+feat_matrix_norm = scaler.fit_transform(feat_matrix)
+
+
+plt.figure(figsize=(8, 10))
+n_colors = 8  # fewer = smoother
+plt.imshow(np.round(feat_matrix_norm * n_colors) / n_colors, cmap='viridis', aspect='auto')
+plt.colorbar(label='Normalized Feature Value')
+plt.title("Feature Matrix Visualization (Digits)")
+plt.xlabel("Feature Index")
+plt.ylabel("Sample Index")
+plt.tight_layout()
+plt.show()
 
 ### VISUALIZE FEATURES IMAGES
 
@@ -102,7 +125,7 @@ num_examples = 10
 example_images = digitsIms[:num_examples]
 example_labels = digitsLabels[:num_examples]
 
-fig, axes = plt.subplots(num_examples, 2, figsize=(16, 4 * num_examples))
+fig, axes = plt.subplots(2, num_examples, figsize=(2 * num_examples, 5))
 fig.suptitle("HOG Feature Visualization", fontsize=10)
 
 for i in range(num_examples):
@@ -119,16 +142,16 @@ for i in range(num_examples):
     hog_image = descHOG.extract_pixel_features(roi_gray)
 
     # Plot original image
-    axes[i, 0].imshow(roi, cmap=plt.cm.gray)
-    axes[i, 0].set_title(f"Original Digit: {label}")
-    axes[i, 0].axis("off")
+    axes[0, i].imshow(roi, cmap=plt.cm.gray)
+    axes[0, i].set_title(f"Original Digit: {label}", fontsize=10)
+    axes[0, i].axis("off")
 
     # Plot HOG image
-    axes[i, 1].imshow(hog_image, cmap=plt.cm.gray)
-    axes[i, 1].set_title("HOG Image")
-    axes[i, 1].axis("off")
+    axes[1, i].imshow(hog_image, cmap=plt.cm.gray)
+    axes[1, i].set_title(f"HOG Image {label}", fontsize=10)
+    axes[1, i].axis("off")
 
-plt.tight_layout()
+plt.tight_layout(rect=[0, 0, 1, 0.92])
 plt.show()
 
 ## LBP Images for Digits
@@ -138,7 +161,7 @@ num_examples = 10
 example_images = digitsIms[:num_examples]
 example_labels = digitsLabels[:num_examples]
 
-fig, axes = plt.subplots(num_examples, 2, figsize=(16, 4 * num_examples))
+fig, axes = plt.subplots(2, num_examples, figsize=(2 * num_examples, 5))
 fig.suptitle("LBP Feature Visualization", fontsize=10)
 
 for i in range(num_examples):
@@ -153,13 +176,13 @@ for i in range(num_examples):
     hog_image = descLBP.extract_pixel_features(roi_gray)
 
     # Plot original image
-    axes[i, 0].imshow(roi, cmap=plt.cm.gray)
-    axes[i, 0].set_title(f"Original Digit: {label}")
-    axes[i, 0].axis("off")
+    axes[0, i].imshow(roi, cmap=plt.cm.gray)
+    axes[0, i].set_title(f"Original Digit: {label}", fontsize=10)
+    axes[0, i].axis("off")
 
-    axes[i, 1].imshow(hog_image, cmap=plt.cm.gray)
-    axes[i, 1].set_title("LBP Image")
-    axes[i, 1].axis("off")
+    axes[1, i].imshow(hog_image, cmap=plt.cm.gray)
+    axes[1, i].set_title(f"LBP Image: {label}", fontsize=10)
+    axes[1, i].axis("off")
 
-plt.tight_layout()
+plt.tight_layout(rect=[0, 0, 1, 0.92])
 plt.show()
