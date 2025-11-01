@@ -86,7 +86,7 @@ def detectCharacterCandidates(image, reg, SHOW=0):
 # MAIN FUNCTION FOR EXERCISE 1
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    SHOW=0
+    SHOW=1
     # Define path (adjust if necessary)
     base_path = "./data/cropped_real_plates/Frontal"  # or "Lateral"
 
@@ -98,8 +98,13 @@ if __name__ == "__main__":
     regionsImCropped = data["regionsImCropped"]
     ImID = data["imID"]
 
+    #FOR REPORT
+    target_img_name = "8727JTC"
+
     # Loop over some plates 
     for idx, img_name in enumerate(ImID):
+        if img_name != target_img_name:
+            continue  # skip other plates
         img_filename = f"{img_name}_MLPlate0.png"
         img_path = os.path.join(base_path, img_filename)
 
@@ -111,7 +116,7 @@ if __name__ == "__main__":
         reg = np.array(regionsImCropped[idx], dtype="float32")
 
         # Run the segmentation
-        plate, thresh, candidates = detectCharacterCandidates(image, reg, SHOW=0)
+        plate, thresh, candidates = detectCharacterCandidates(image, reg, SHOW=1)
         
         if SHOW:
             # Visualize intermediate and final outputs
@@ -139,7 +144,7 @@ if __name__ == "__main__":
 
 
         # ADDING THE POSTPROCESSING CREATED IN BLOBDETECTOR PIPELINE
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=0)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(thresh, plate, SHOW=0)
         print(f"Detected {len(char_boxes)} character regions.")
 
 
@@ -170,6 +175,7 @@ if __name__ == "__main__":
         # ----------------------------------------------------------------------
         # SAVE CROPPED CHARACTERS
         # ----------------------------------------------------------------------
+        """
         # Detect if we are processing frontal or lateral dataset from the path
         view_type = "Frontal" if "Frontal" in base_path else "Lateral"
 
@@ -192,5 +198,6 @@ if __name__ == "__main__":
             cv2.imwrite(save_path, gray_ch)
 
         # stop after a few images
+        """
         if idx >= 30:
             break

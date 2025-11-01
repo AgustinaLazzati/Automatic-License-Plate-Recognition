@@ -30,7 +30,7 @@ from Descriptors.hog import FeatureHOG
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
 DataDir = "example_fonts"
-ResultsDir = "ResultsDescr"
+ResultsDir = r"D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Results"
 # Load Font DataSets
 fileout = os.path.join(DataDir, "alphabetIms") + ".pkl"
 f = open(fileout, "rb")
@@ -93,6 +93,7 @@ for targetFeat in digitsFeat.keys():
     plt.show()
     #plt.savefig(os.path.join(ResultsDir,targetFeat+'DigitsFeatSpace.png'))
 
+"""
 ####JUST FOR WORKFLOW.....
 ##########################################
 import matplotlib.pyplot as plt
@@ -115,6 +116,7 @@ plt.xlabel("Feature Index")
 plt.ylabel("Sample Index")
 plt.tight_layout()
 plt.show()
+"""
 
 ### VISUALIZE FEATURES IMAGES
 

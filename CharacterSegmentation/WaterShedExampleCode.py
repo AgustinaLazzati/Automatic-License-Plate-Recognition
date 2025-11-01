@@ -30,8 +30,13 @@ print("Variables in PlateRegions.npz:", data.files)
 regionsImCropped = data["regionsImCropped"]
 ImID = data["imID"]
 
+#FOR REPORT
+target_img_name = "8727JTC"
+
 # Loop over some plates 
 for idx, img_name in enumerate(ImID):
+    if img_name != target_img_name:
+            continue  # skip other plates
     img_filename = f"{img_name}_MLPlate0.png"
     img_fullpath = os.path.join(base_path, img_filename)
 
@@ -125,26 +130,29 @@ for idx, img_name in enumerate(ImID):
     # -------------------------------------------------------------------------
     # CHARACTER BOUNDING BOX EXTRACTION (from watershed-based mask)
     # -------------------------------------------------------------------------
-    contours, _ = cv2.findContours(char_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     char_boxes = []
+    unique_labels = np.unique(markers)
 
     h_plate, w_plate = img.shape[:2]
-    for c in contours:
-        x, y, w, h = cv2.boundingRect(c)
+
+    for label in unique_labels:
+        if label <= 1:
+            continue  # skip background and border (-1, 1)
+
+        region_mask = (markers == label).astype(np.uint8) * 255
+        x, y, w, h = cv2.boundingRect(region_mask)
         area = w * h
+        aspect = h / float(w)
 
-        # Filter out noise or oversized regions
-        if 100 < area < (h_plate * w_plate * 0.2):
-            aspect = h / float(w)
-            if 1.0 < aspect < 6.0:  # characters are usually tall and narrow
-                char_boxes.append((x, y, w, h))
-                # draw for visualization
-                cv2.rectangle(img_original, (x, y), (x + w, y + h), (0, 255, 0), 1)
+        # same filtering as before
+        if 100 < area < (h_plate * w_plate * 0.2) and 1.0 < aspect < 6.0:
+            char_boxes.append((x, y, w, h))
+            cv2.rectangle(img_original, (x, y), (x + w, y + h), (0, 255, 0), 1)
 
-    # Sort boxes left-to-right
+    # sort boxes left-to-right
     char_boxes = sorted(char_boxes, key=lambda b: b[0])
     cv2.imshow("Detected Characters", img_original)
-    print(f"Detected {len(char_boxes)} characters.")
+    print(f"Detected {len(char_boxes)} characters (from watershed labels).")
     
 
     #Ploting all steps in subplots

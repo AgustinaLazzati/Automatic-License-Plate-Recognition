@@ -18,9 +18,10 @@ import imutils
 import cv2
 from matplotlib import pyplot as plt
 import os
-from skimage.feature import blob_log  # <-- Added for LoG blob detection
+from skimage.feature import blob_log, blob_dog  # <-- Added for LoG blob detection
 from skimage.color import rgb2gray    # <-- For grayscale conversion
 from scipy.ndimage import gaussian_laplace   # <-- Added for Gaussian Laplace filtering
+
 
 def preprocess_enhance_plate(thresh, SHOW=0):
     #Morphological post-processing for binary license plate mask.
@@ -117,6 +118,21 @@ def detectCharacterCandidates(image, reg, SHOW=0, PREPROCESSING=1):
         candidates_scipy = np.zeros_like(thresh, dtype=np.uint8)
         log_response = np.zeros_like(norm, dtype=np.float32)
 
+    # ---------------------------------------------------
+    # DoG-based blob detection
+    # ---------------------------------------------------
+    blobs_dog = blob_dog(norm, min_sigma= 3,max_sigma=30, threshold=0.1)
+    if blobs_dog.size > 0:
+        blobs_dog[:, 2] = blobs_dog[:, 2] * np.sqrt(2)
+
+    # Visualize DoG blobs
+    if SHOW:
+        vis_dog = cv2.cvtColor((rgb2gray(plate) * 255).astype("uint8"), cv2.COLOR_GRAY2BGR)
+        for y, x, r in blobs_dog:
+            cv2.circle(vis_dog, (int(x), int(y)), int(r), (255, 0, 0), 1)
+        cv2.imshow("DoG Blobs", vis_dog)
+        print("DoG blobs:", len(blobs_dog))
+    
     if (SHOW):
         print("START DIMENSIONAL ANALYSIS")
     
@@ -146,7 +162,7 @@ def detectCharacterCandidates(image, reg, SHOW=0, PREPROCESSING=1):
     return plate, thresh, MycharCandidates, blob_mask, candidates_scipy, log_response
 
 
-def postprocess_character_candidates(candidate_map, plate, SHOW=0, area_limits=(200, 2500)):
+def postprocess_character_candidates(candidate_map, plate, SHOW=0, area_limits=(300, 2500)):
     """
     Refines the raw candidate map (from LoG or contour detection),
     removes noise, extracts bounding boxes and crops each detected character.
@@ -196,7 +212,7 @@ def postprocess_character_candidates(candidate_map, plate, SHOW=0, area_limits=(
 # ---------------------------------------------------------------
 if __name__ == "__main__":
     # Define path (adjust if necessary)
-    base_path = "./data/cropped_real_plates/Lateral"  # or "Lateral"
+    base_path = "./data/cropped_real_plates/Frontal"  # or "Lateral"
 
     # Load region data
     npz_path = os.path.join(base_path, "PlateRegions.npz")
@@ -206,8 +222,12 @@ if __name__ == "__main__":
     regionsImCropped = data["regionsImCropped"]
     ImID = data["imID"]
 
+    #FOR REPORT
+    target_img_name = "8727JTC"
     # Loop over some plates 
     for idx, img_name in enumerate(ImID):
+        if img_name != target_img_name:
+            continue  # skip other plates
         img_filename = f"{img_name}_MLPlate0.png"
         img_path = os.path.join(base_path, img_filename)
 
@@ -219,7 +239,7 @@ if __name__ == "__main__":
         reg = np.array(regionsImCropped[idx], dtype="float32")
 
         # Run the segmentation
-        plate, thresh, candidates, blob_mask, candidates_scipy, log_response = detectCharacterCandidates(image, reg, SHOW=0, PREPROCESSING=1)
+        plate, thresh, candidates, blob_mask, candidates_scipy, log_response = detectCharacterCandidates(image, reg, SHOW=1, PREPROCESSING=1)
         """
         # Visualize intermediate and final outputs
         plt.figure(figsize=(15, 6))
@@ -261,7 +281,7 @@ if __name__ == "__main__":
         """
 
         #POST PROCESSING
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=1)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(blob_mask, plate, SHOW=1)
         print(f"Detected {len(char_boxes)} character regions.")
 
         plt.figure(figsize=(10, 5))
@@ -289,6 +309,7 @@ if __name__ == "__main__":
         # We could also save cropped characters
         # for i, ch in enumerate(char_crops):
         #     cv2.imwrite(f"./char_crops/char_{i}.png", ch)
+        """
         # ----------------------------------------------------------------------
         # SAVE CROPPED CHARACTERS
         # ----------------------------------------------------------------------
@@ -312,7 +333,7 @@ if __name__ == "__main__":
             # Save cropped character
             save_path = os.path.join(plate_folder, f"char_{i:02d}.png")
             cv2.imwrite(save_path, gray_ch)
-
+        """
         # stop after a few images
         if idx >= 20:
             break

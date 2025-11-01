@@ -30,7 +30,7 @@ from Descriptors.hog import FeatureHOG
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH) 
 DataDir='example_fonts'    #r'/home/tomiock/uni2025/license/example_fonts'
-ResultsDir='ResultsDescr'
+ResultsDir=r"D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Results"
 # Load Font DataSets
 fileout=os.path.join(DataDir,'alphabetIms')+'.pkl'    
 f=open(fileout, 'rb')

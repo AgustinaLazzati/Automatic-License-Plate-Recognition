@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import os
 import argparse
 
-SHOW = 0
+SHOW = 1
 
 # Plate size thresholds (smaller min size for distant plates)
 minPlateW = 60   # previously 100
@@ -117,41 +117,33 @@ def detectPlates(image):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Detect license plates in images.")
-
-    parser.add_argument(
-        "datapath", type=str, nargs="?", default=os.path.join(".", "data", "Frontal"), help="Path to the directory containing images."
-    )
-    args = parser.parse_args()
-
-    # The datapath is already handled by argparse with a default value
-    datapath = args.datapath
-
-    # Normalize the path to an absolute path for robustness.
-    datapath = os.path.abspath(datapath)
+   # Relative path to the folder with the plate images
+    datapath = os.path.join(".", "data", "Frontal")
+    datapath = os.path.abspath(datapath)  # normalize to absolute path
 
     if not os.path.isdir(datapath):
         print(f"Error: Directory '{datapath}' not found.")
         return
 
-    image_files = [
-        f for f in os.listdir(datapath) if f.lower().endswith((".jpg", ".jpeg", ".png"))
-    ]
+    # List all image files
+    image_files = [f for f in os.listdir(datapath) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
 
     if not image_files:
         print(f"Error: No images found in '{datapath}'.")
         return
 
-    # Sort files to ensure consistent order and pick the first one
-    image_files.sort()
-    image_name = image_files[0]
+    # Target plate filename for report
+    target_plate = "8727JTC.jpg"  # change extension if needed
+    if target_plate not in image_files:
+        print(f"Error: '{target_plate}' not found in '{datapath}'.")
+        return
 
-    image_path = os.path.abspath(os.path.join(datapath, image_name)).replace("\\", "/")
-    
+    # Full path to the image
+    image_path = os.path.abspath(os.path.join(datapath, target_plate)).replace("\\", "/")
     print(f"Processing image: {image_path}")
-    
-    image = cv2.imread(image_path)
 
+    # Read image
+    image = cv2.imread(image_path)
     if image is None:
         print(f"Error: Could not read the image at '{image_path}'.")
         return
