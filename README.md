@@ -31,8 +31,11 @@ Also, data augmentation was implemented.
 
 ### 2️ Detection  
 License plates are identified using:
+- Traditional ML approach using morphological and gradient-based operations.
 - **YOLOv5** and **YOLOv8** (COCO pre-trained)
-- A **custom YOLOv8** model trained specifically for plate detection.
+  <img width="600" height="381" alt="image" src="https://github.com/user-attachments/assets/f78ef5ba-b78b-4b06-b3c4-dfafa5e415eb" />
+
+- **LP-Detection Model** (YOLOv8-based, trained for license plates)
 
 ### 3️ Segmentation  
 Plates are aligned and processed to extract individual characters using:
@@ -41,13 +44,13 @@ Plates are aligned and processed to extract individual characters using:
 
 ### 4️ Recognition  
 Character recognition is achieved through:
-- **HOG features** for descriptor extraction  
-- **Two SVM classifiers** – one for digits and one for letters  
+- Feature descriptor extraction  
+- **classifiers** – for digits and for letters  
 - Final reconstruction of full license plate strings
 
 ---
 
-## 🧩 Code Structure
+## Code Structure
 
 | Section | Description |
 |----------|--------------|
