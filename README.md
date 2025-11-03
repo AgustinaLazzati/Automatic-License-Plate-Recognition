@@ -22,14 +22,16 @@ Ultimately, this work addresses challenges related to:
 ---
 
 ## ALPR Pipeline
-<img width="1072" height="597" alt="image" src="https://github.com/user-attachments/assets/90a25d2e-4ada-4357-a1fa-cf7a42b82cc7" />
 The ALPR system operates in **four main stages**:
 
-### 1️ Data Collection  
+<img width="1072" height="597" alt="image" src="https://github.com/user-attachments/assets/90a25d2e-4ada-4357-a1fa-cf7a42b82cc7" />
+
+
+### 1️. Data Collection  
 Analysis of provided (`real_plates.zip`) and custom-acquired images to ensure consistent **lighting**, **color**, and **camera angles**.
 Also, data augmentation was implemented.
 
-### 2️ Detection  
+### 2️. Detection  
 License plates are identified using:
 - Traditional ML approach using morphological and gradient-based operations.
 - **YOLOv5** and **YOLOv8** (COCO pre-trained)
@@ -38,13 +40,13 @@ License plates are identified using:
 
 - **LP-Detection Model** (YOLOv8-based, trained for license plates)
 
-### 3️ Segmentation  
+### 3️. Segmentation  
 Plates are aligned and processed to extract individual characters using:
 - **Contour**, **Blob** and **watershed** method
   
 - **Preprocessing filters** for enhanced clarity
 
-### 4️ Recognition  
+### 4️. Recognition  
 Character recognition is achieved through:
 - Feature descriptor extraction  
 - **classifiers** – for digits and for letters  
