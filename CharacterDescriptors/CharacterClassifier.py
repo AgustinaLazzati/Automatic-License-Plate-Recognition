@@ -42,7 +42,6 @@ f.close()
 digitsIms=data['digitsIms']
 digitsLabels=np.array(data['digitsLabels'])
 
-
 # --- VOWEL REMOVAL LOGIC ---
 VOWELS = np.array(['A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u'])
 
@@ -62,17 +61,14 @@ print(f"Consonant-only Alphabet size: {len(alphabetLabels_consonants)}")
 digitsFeat={}
 digitsFeat['BLCK_AVG']=[]
 digitsFeat['HOG'] = []
-digitsFeat['LBP'] = []
 
 alphabetFeat={}
 alphabetFeat['BLCK_AVG']=[]
 alphabetFeat['HOG'] = []
-alphabetFeat['LBP'] = []
 
 # initialize descriptors
 descBlckAvg = FeatureBlockBinaryPixelSum()
 descHOG = FeatureHOG()
-descLBP = FeatureLBP()
 
 ### EXTRACT FEATURES
 # Digits (unchanged)
@@ -80,20 +76,17 @@ for roi in digitsIms:
      # extract features
      digitsFeat['BLCK_AVG'].append(descBlckAvg.extract_image_features(roi))
      digitsFeat['HOG'].append(descHOG.extract_image_features(roi))
-     digitsFeat['LBP'].append(descLBP.extract_image_features(roi))
      
 # Alphabet (using filtered consonant data)
 for roi in alphabetIms_consonants:
     # extract features
     alphabetFeat['BLCK_AVG'].append(descBlckAvg.extract_image_features(roi))
     alphabetFeat['HOG'].append(descHOG.extract_image_features(roi))
-    alphabetFeat['LBP'].append(descLBP.extract_image_features(roi))
 
 
 ### CLASSIFICATION
 classifiers = {
     "SVM": LinearSVC(random_state=42, max_iter=5000),
-    "KNN": KNeighborsClassifier(),
     "MLP": MLPClassifier(random_state=42, max_iter=5000)
 }
 
