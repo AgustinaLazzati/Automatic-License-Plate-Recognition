@@ -35,8 +35,8 @@ Also, data augmentation was implemented.
 License plates are identified using:
 - Traditional ML approach using morphological and gradient-based operations.
 - **YOLOv5** and **YOLOv8** (COCO pre-trained)
+  
   <img width="476" height="332" alt="image" src="https://github.com/user-attachments/assets/075db7e5-338a-4401-b2f4-2d73a5214fb3" />
-
 
 - **LP-Detection Model** (YOLOv8-based, trained for license plates)
 
