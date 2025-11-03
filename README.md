@@ -19,3 +19,5 @@ This is the repository that contains an algorithm that automatically detects and
 - The HSV plots used in the Fréchet + FFT pipeline can be seen at `plots/hsv_plots`
 
 - Plots related to the characters classification and validation are in the same folder as the code, `CharacterDescriptors`
+
+> it seems that more than 100 plots where done during the development of this project
