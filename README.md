@@ -40,7 +40,7 @@ License plates are identified using:
 
 ### 3️ Segmentation  
 Plates are aligned and processed to extract individual characters using:
-- **Contour** and **watershed** methods  
+- **Contour**, **Blob** and **watershed** methods  
 - **Preprocessing filters** for enhanced clarity
 
 ### 4️ Recognition  
