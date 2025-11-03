@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import os
 import argparse
 
-SHOW = 1
+SHOW = 0
 
 # Plate size thresholds (smaller min size for distant plates)
 minPlateW = 60   # previously 100
@@ -81,8 +81,8 @@ def detectPlates(image):
         plt.show()
 
     # Step 5: Morphology
-    thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=2)  # was 4
-    thresh = cv2.dilate(thresh, rectKernel, iterations=1)  # was 2
+    thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=4)  # was 4
+    thresh = cv2.dilate(thresh, rectKernel, iterations=2)  # was 2
     if SHOW:
         plt.figure()
         plt.imshow(thresh, cmap="gray")

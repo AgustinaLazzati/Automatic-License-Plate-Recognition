@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
 
         # ADDING THE POSTPROCESSING CREATED IN BLOBDETECTOR PIPELINE
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(thresh, plate, SHOW=0)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates, plate, SHOW=0)
         print(f"Detected {len(char_boxes)} character regions.")
 
 

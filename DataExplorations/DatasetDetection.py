@@ -88,7 +88,7 @@ def analyze_datasets(datasets):
                     plates, _ = detectPlates(zoomed_out)
         
                 
-                if len(plates) > 0:
+                if len(plates) >0 and len(plates)<=2:
                     detected += 1
 
             image_counts[dataset_name][norm_view] = total

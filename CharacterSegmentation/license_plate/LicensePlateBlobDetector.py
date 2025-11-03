@@ -132,7 +132,12 @@ def detectCharacterCandidates(image, reg, SHOW=0, PREPROCESSING=1):
             cv2.circle(vis_dog, (int(x), int(y)), int(r), (255, 0, 0), 1)
         cv2.imshow("DoG Blobs", vis_dog)
         print("DoG blobs:", len(blobs_dog))
-    
+
+    # Create blob mask
+    dog_mask = np.zeros_like(thresh, dtype="uint8")
+    for (y, x, r) in blobs_dog:
+        cv2.circle(dog_mask, (int(x), int(y)), int(r), 255, -1)
+
     if (SHOW):
         print("START DIMENSIONAL ANALYSIS")
     
@@ -162,7 +167,7 @@ def detectCharacterCandidates(image, reg, SHOW=0, PREPROCESSING=1):
     return plate, thresh, MycharCandidates, blob_mask, candidates_scipy, log_response
 
 
-def postprocess_character_candidates(candidate_map, plate, SHOW=0, area_limits=(300, 2500)):
+def postprocess_character_candidates(candidate_map, plate, SHOW=0, area_limits=(100, 2500)):
     """
     Refines the raw candidate map (from LoG or contour detection),
     removes noise, extracts bounding boxes and crops each detected character.
@@ -279,9 +284,9 @@ if __name__ == "__main__":
         plt.tight_layout(rect=[0, 0, 1, 0.93])
         plt.show()
         """
-
+        
         #POST PROCESSING
-        char_boxes, char_crops, refined_mask = postprocess_character_candidates(blob_mask, plate, SHOW=1)
+        char_boxes, char_crops, refined_mask = postprocess_character_candidates(candidates_scipy, plate, SHOW=1)
         print(f"Detected {len(char_boxes)} character regions.")
 
         plt.figure(figsize=(10, 5))
