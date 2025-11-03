@@ -83,6 +83,6 @@ Character recognition is achieved through:
 - **`example_fonts.zip`** – Synthetic Spanish license plate font dataset  
   - `digitsIms.pkl` / `alphabetIms.pkl`: Cropped digits and letters  
   - `digitsLabels` / `alphabetLabels`: Label files for each character  
-- **Own Images** – Additional dataset collected under a standardized protocol
+- **Own Images** – Additional dataset collected.
 
 ---
